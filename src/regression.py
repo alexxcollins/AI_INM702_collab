@@ -43,25 +43,16 @@ class GenerateData(ABC):
         pass
     
     def generate_y(self):
-        return np.matmul(self.X, self.beta) + self.e
-    
-    def generate_dataset(self):
-        self.y = self.generate_y(self)
+        self.y = np.matmul(self.X1, self.beta) + self.e_var
         
-    # @property
-    # def y(self):
-    #     return self.generate_y()
-    
+    def generate_dataset(self, **kwargs):
+        self.generate_X(**kwargs)
+        self.generate_y()
             
 class UniformX(GenerateData):
     
     def generate_X(self, low=-10, high=10):
-        X = self.rng.uniform(low=low, high=high, size=(self.N,self._p))
-        X0 = np.ones((self.N,1))
-        self.X =  np.concatenate([X0, X], axis=1)
+        self.X = self.rng.uniform(low=low, high=high, size=(self.N,self._p))
+        self.X0 = np.ones((self.N,1))
+        self.X1 =  np.concatenate([self.X0, self.X], axis=1)
 
-    def generate_y(self):
-        return np.matmul(self.X, self.beta) + self.e
-    
-    def generate_dataset(self):
-        self.y = self.generate_y()
