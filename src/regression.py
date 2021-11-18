@@ -43,7 +43,7 @@ class GenerateData(ABC):
         pass
     
     def generate_y(self):
-        self.y = np.matmul(self.X1, self.beta) + self.e_var
+        self.y = np.matmul(self.X1, self.beta) + self.e
         
     def generate_dataset(self, **kwargs):
         self.generate_X(**kwargs)
