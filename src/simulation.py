@@ -8,8 +8,6 @@ Created on Sat Nov 20 12:51:11 2021
 from regression import GenerateData, UniformX
 import numpy as np
 from numpy.random import default_rng
-import matplotlib.pyplot as plt 
-from mpl_toolkits import mplot3d
 from sklearn.linear_model import LinearRegression
 
 rng = np.random.default_rng()
@@ -59,4 +57,25 @@ def simulation(object_GenerateData, frequency, *arg, **kwarg):
         "ssr":ssr,
         }
     return sim_result
-        
+
+#allow input with one change factor to vary, given a list of changes expressed as dictionary, e.g. factor={"positions":positions}
+def change_factor(object_GenerateData, frequency, factor, *arg, **kwarg):
+    test = object_GenerateData
+    d={}
+    for key in ("score_mean", "score_variance", "ssr_mean", "ssr_variance"):
+        d[key]=[]
+    for l in range(len(test.beta)):
+        d["b"+str(l)+"_mean"]=[]
+        d["b"+str(l)+"_variance"]=[]
+    for key_factor, change_value in factor.items():
+        for change in change_value:
+            kw = {key_factor: change}
+            result=simulation(test,frequency, *arg, **kw, **kwarg)
+            for key in ("score_mean", "score_variance", "ssr_mean", "ssr_variance"):
+                d[key].append(result[key])
+            d["b0_mean"].append(*result["beta_mean"][0])
+            d["b0_variance"].append(*result["beta_variance"][0])
+            for l in range(len(test1.beta)-1):
+                d["b"+str(l+1)+"_mean"].append(result["beta_mean"][1][l])
+                d["b"+str(l+1)+"_variance"].append(result["beta_variance"][1][l])
+    return d
