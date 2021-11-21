@@ -51,16 +51,7 @@ class GenerateData(ABC):
     def generate_dataset(self, **kwargs):
         self.generate_X(**kwargs)
         self.generate_y()
-        
-    # next two functions used to generate integer range around (a, b)
-    # use round_down(a) - returns integer below a, and works if a is +ve or -ve
-    # similarly for round_up(b)
-    # rounds number "up". 9.8 -> 10; -9.8 -> -9
-    def round_up(self, x): return int(x) + (x % 1 > 0)*(x>0)
-    
-    # rounds number "down". 9.8 -> 9; -9.8 -> -10
-    def round_down(self, x): return int(x) - (x % 1 > 0)*(x<0)
-        
+             
     def line2D(self):
         '''
         this is designed to work for a one factor regression
@@ -92,8 +83,3 @@ class UniformX(GenerateData):
         self.X0 = np.ones((self.N,1))
         self.X1 =  np.concatenate([self.X0, self.X], axis=1)
 
-def test():
-    test = UniformX(beta=(2,0.5))
-    test.generate_dataset()
-    test.line2D()
-    return test
