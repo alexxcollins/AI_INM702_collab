@@ -69,7 +69,7 @@ class GenerateData(ABC):
                             .format(self._p))
         
         X = np.linspace(self.X.min(), self.X.max(), 100)
-        y = self.beta[0] + self.beta[1] * x
+        y = self.beta[0] + self.beta[1] * X
         
         fig, ax = plt.subplots()
         ax.plot(X, y, color='r')
@@ -100,18 +100,18 @@ class GenerateData(ABC):
             raise Exception('dimension of X must be 2. X had dimension {}'
                             .format(self._p))
         
-        fig, ax = plt.subplots()
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
         
-        X1 = np.linspace(self.round_down(self.X[:,0]),
-                                         self.round_up(self.X[:,0]), 2)
-        X2 = np.linspace(self.round_down(self.X[:,1]),
-                                         self.round_up(self.X[:,1]), 2)
+        X1 = np.linspace(self.round_down(self.X[:,0].min()),
+                         self.round_up(self.X[:,0].max()), 2)
+        X2 = np.linspace(self.round_down(self.X[:,1].min()),
+                         self.round_up(self.X[:,1].max()), 2)
         X1, X2 = np.meshgrid(X1, X2)
         y = self.beta[0] + self.beta[1] * X1 + self.beta[2] * X2
-        ax.plot_surface(X1, X2, y, alpha=0.2, color='b')
-        
-        ax.plot(x, y, color='r')
+
         ax.scatter(self.X[:,0], self.X[:,1], self.y, alpha=0.2)
+        ax.plot_surface(X1, X2, y, alpha=0.2, color='b')
 
             
 class UniformX(GenerateData):
