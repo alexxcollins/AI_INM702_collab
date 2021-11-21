@@ -52,7 +52,7 @@ class GenerateData(ABC):
         self.generate_X(**kwargs)
         self.generate_y()
              
-    def line2D(self):
+    def plot2D(self):
         '''
         this is designed to work for a one factor regression
         
@@ -74,6 +74,8 @@ class GenerateData(ABC):
         fig, ax = plt.subplots()
         ax.plot(x, y, color='r')
         ax.scatter(self.X, self.y, alpha=0.2)
+        
+    
 
             
 class UniformX(GenerateData):
