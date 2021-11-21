@@ -42,8 +42,11 @@ def subsetTest():
     return t1, t2, t3
 
 #%% colinear data tests
-def pairwise_test():
-    test = ColinearX(N=5)
-    test.generate_dataset()
+def pairwise_test(mean=None, cov=0.3):
+    test = ColinearX(beta=(0, 1, 1))
+    test.generate_dataset(cov=cov)
+    test.plot2D()
+    test.plot2D(i=2)
     test.plot3D()
     return test
+

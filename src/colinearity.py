@@ -18,10 +18,10 @@ import numpy as np
         
 class ColinearX(GenerateData):
     
-    def generate_X(self, co_type='pairwise correlation', *kwargs):
+    def generate_X(self, co_type='pairwise correlation', **kwargs):
         
         if co_type == 'pairwise correlation':
-            self.pairwiseX()
+            self.pairwiseX(**kwargs)
             
     def pairwiseX(self, mean = None, cov=0.3):
         
