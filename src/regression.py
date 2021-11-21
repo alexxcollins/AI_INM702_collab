@@ -32,7 +32,7 @@ class GenerateData(ABC):
         # we often use p and p' in regression formulas, so I'm defining both
         # at the moment discourage changing with underscore rather than setters
         self.e_var = 1
-        self.e = self._generate_epsilon()
+        
         
     def _generate_epsilon(self):
         return self.rng.normal(0, self.e_var**(1/2), 
@@ -43,7 +43,8 @@ class GenerateData(ABC):
         pass
     
     def generate_y(self):
-        self.y = np.matmul(self.X1, self.beta) + self.e
+        self.e = self._generate_epsilon()
+        self.y = np.matmul(self.X1, self.beta) + self.e  
         
     def generate_dataset(self, **kwargs):
         self.generate_X(**kwargs)
