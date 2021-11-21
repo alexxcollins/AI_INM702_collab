@@ -92,7 +92,7 @@ class GenerateData(ABC):
     
     def plot3D(self):
         '''
-        this is designed to work for a one factor regression
+        this is designed to work for a regression with two input features
         
         takes the beta (intercept + x coefficients) of the original data to 
         create a visualisation of the line showing the relationship between
