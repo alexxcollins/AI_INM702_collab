@@ -103,19 +103,17 @@ class GenerateData(ABC):
                             ))
         self.b_pred = b[:, np.newaxis]
              
-    def plot2D(self, i=1):
+    def plot2D(self, i=1, fitted_line=True, true_beta_line=True):
         '''
-        plot the scatter of y and x_i. The user can select the column of X
+        plot the scatter of y and X_i. The user can select the column of X
         to plot by setting i.
         
         takes the beta (intercept + x_i coefficient) of the original data to 
         create a visualisation of the line showing the relationship between
-        x and y, as well as a scatter plot of the data.
+        X and y, as well as a scatter plot of the data.
         
         ###### ToDo
-        put line of best fit from regression results
-        
-        maybe change x and X variable below to make less confusing
+        options to print title for chart and equation for line of best fit
         ######
         
         Parameters
@@ -126,14 +124,18 @@ class GenerateData(ABC):
             
         '''
         # variable below is the selected column of X data
-        x = self.X[:,i-1,np.newaxis]
+        X_i = self.X[:,i-1,np.newaxis]
         
-        X = np.linspace(x.min(), x.max(), 100)
-        y = self.beta[0] + self.beta[i] * X
+        X = np.linspace(X_i.min(), X_i.max(), 100)
+        y_beta = self.beta[0] + self.beta[i] * X
+        y_fitted = self.b_pred[0] + self.b_pred[i] * X
         
         fig, ax = plt.subplots()
-        ax.plot(X, y, color='r')
-        ax.scatter(x, self.y, alpha=0.2)
+        if true_beta_line:
+            ax.plot(X, y_beta, color='r')
+        if fitted_line:
+            ax.plot(X, y_fitted, color='g')
+        ax.scatter(X_i, self.y, color='b', alpha=0.2)
         
     # next two functions used to generate integer range around (a, b)
     # use round_down(a) - returns integer below a, and works if a is +ve or -ve
@@ -154,6 +156,8 @@ class GenerateData(ABC):
         
         ###### ToDo
         put line of best fit from regression results
+        
+        options to print title for chart and equation for line of best fit
         ######
         '''
         if self._p != 2:
