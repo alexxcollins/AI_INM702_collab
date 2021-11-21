@@ -68,14 +68,50 @@ class GenerateData(ABC):
             raise Exception('dimension of X must be 1. X had dimension {}'
                             .format(self._p))
         
-        x = np.linspace(self.X.min(), self.X.max(), 100)
+        X = np.linspace(self.X.min(), self.X.max(), 100)
         y = self.beta[0] + self.beta[1] * x
         
         fig, ax = plt.subplots()
-        ax.plot(x, y, color='r')
+        ax.plot(X, y, color='r')
         ax.scatter(self.X, self.y, alpha=0.2)
         
+    # next two functions used to generate integer range around (a, b)
+    # use round_down(a) - returns integer below a, and works if a is +ve or -ve
+    # similarly for round_up(b)
+    # rounds number "up". 9.8 -> 10; -9.8 -> -9
+    def round_up(self, x): return int(x) + (x % 1 > 0)*(x>0)
+
+    # rounds number "down". 9.8 -> 9; -9.8 -> -10
+    def round_down(self, x): return int(x) - (x % 1 > 0)*(x<0)
     
+    def plot3D(self):
+        '''
+        this is designed to work for a one factor regression
+        
+        takes the beta (intercept + x coefficients) of the original data to 
+        create a visualisation of the line showing the relationship between
+        x and y, as well as a scatter plot of the data.
+        
+        ###### ToDo
+        put line of best fit from regression results
+        ######
+        '''
+        if self._p != 2:
+            raise Exception('dimension of X must be 2. X had dimension {}'
+                            .format(self._p))
+        
+        fig, ax = plt.subplots()
+        
+        X1 = np.linspace(self.round_down(self.X[:,0]),
+                                         self.round_up(self.X[:,0]), 2)
+        X2 = np.linspace(self.round_down(self.X[:,1]),
+                                         self.round_up(self.X[:,1]), 2)
+        X1, X2 = np.meshgrid(X1, X2)
+        y = self.beta[0] + self.beta[1] * X1 + self.beta[2] * X2
+        ax.plot_surface(X1, X2, y, alpha=0.2, color='b')
+        
+        ax.plot(x, y, color='r')
+        ax.scatter(self.X[:,0], self.X[:,1], self.y, alpha=0.2)
 
             
 class UniformX(GenerateData):
