@@ -6,13 +6,14 @@ Created on Thu Nov 11 12:01:05 2021
 @author: alexxcollins
 """
 
-#%% to test if I can create ABC which defintes how to generate y with x
+#%% import packages
 from numpy.random import default_rng
 from abc import ABC, abstractmethod
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+#%% GnerateData
 class GenerateData(ABC):
     '''
     The base class will generate random Y given parameters for sample size
@@ -113,7 +114,7 @@ class GenerateData(ABC):
         ax.scatter(self.X[:,0], self.X[:,1], self.y, alpha=0.2)
         ax.plot_surface(X1, X2, y, alpha=0.2, color='b')
 
-            
+#%% UniformX            
 class UniformX(GenerateData):
     
     def generate_X(self, low=-10, high=10):

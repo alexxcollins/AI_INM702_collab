@@ -7,6 +7,7 @@ Created on Sun Nov 21 15:00:30 2021
 """
 
 from regression import UniformX
+from colinearity import ColinearX
 
 def d2test():
     test = UniformX(beta = (2, 0.7))
@@ -19,3 +20,10 @@ def d3test():
     test.generate_dataset()
     test.plot3D()
     return test
+
+def pairwise_test():
+    test = ColinearX(N=5)
+    test.generate_dataset()
+    test.plot3D()
+    return test
+
