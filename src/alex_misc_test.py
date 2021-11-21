@@ -19,3 +19,23 @@ def d3test():
     test.generate_dataset()
     test.plot3D()
     return test
+
+def subsetTest():
+    t1 = UniformX(beta = (2, 0.7))
+    t1.generate_dataset()
+    t1.plot2D()
+    
+    t2 = UniformX(beta = (2, 0.7, 2))
+    t2.generate_dataset()
+    t2.plot2D(i=1)
+    t2.plot2D(i=2)
+    t2.plot3D()
+    
+    t3 = UniformX(beta = (2, 2, 0.7))
+    t3.generate_dataset()
+    t3.plot2D(i=1)
+    t3.plot2D(i=2)
+    t3.plot3D()
+    
+    return t1, t2, t3
+    

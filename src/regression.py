@@ -52,28 +52,34 @@ class GenerateData(ABC):
         self.generate_X(**kwargs)
         self.generate_y()
              
-    def plot2D(self):
+    def plot2D(self, i=1):
         '''
-        this is designed to work for a one factor regression
+        plot the scatter of y and x_i. The user can select the column of X
+        to plot by setting i.
         
-        takes the beta (intercept + x coefficient) of the original data to 
+        takes the beta (intercept + x_i coefficient) of the original data to 
         create a visualisation of the line showing the relationship between
         x and y, as well as a scatter plot of the data.
         
         ###### ToDo
         put line of best fit from regression results
         ######
-        '''
-        if self._p != 1:
-            raise Exception('dimension of X must be 1. X had dimension {}'
-                            .format(self._p))
         
-        X = np.linspace(self.X.min(), self.X.max(), 100)
-        y = self.beta[0] + self.beta[1] * X
+        Parameters
+        ----------
+        i : int
+            optional parameter to select on column from X matrix. i indexed at
+            1, so choose 1 for X_1 and p for final column of X
+            
+        '''
+        x = self.X[:,i-1,np.newaxis]
+        
+        X = np.linspace(x.min(), x.max(), 100)
+        y = self.beta[0] + self.beta[i] * X
         
         fig, ax = plt.subplots()
         ax.plot(X, y, color='r')
-        ax.scatter(self.X, self.y, alpha=0.2)
+        ax.scatter(x, self.y, alpha=0.2)
         
     # next two functions used to generate integer range around (a, b)
     # use round_down(a) - returns integer below a, and works if a is +ve or -ve
@@ -111,7 +117,7 @@ class GenerateData(ABC):
         y = self.beta[0] + self.beta[1] * X1 + self.beta[2] * X2
 
         ax.scatter(self.X[:,0], self.X[:,1], self.y, alpha=0.2)
-        ax.plot_surface(X1, X2, y, alpha=0.2, color='b')
+        ax.plot_surface(X1, X2, y, alpha=0.2, color='r')
 
             
 class UniformX(GenerateData):
