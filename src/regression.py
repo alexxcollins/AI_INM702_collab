@@ -10,6 +10,7 @@ Created on Thu Nov 11 12:01:05 2021
 from numpy.random import default_rng
 from abc import ABC, abstractmethod
 import numpy as np
+from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -49,9 +50,58 @@ class GenerateData(ABC):
         self.e = self._generate_epsilon()
         self.y = np.matmul(self.X1, self.beta) + self.e  
         
-    def generate_dataset(self, **kwargs):
+    def train_test_split(self, test_size=0.25, shuffle=True):
+        '''
+        splits data into test and train datasets.
+        
+        will shuffle dataset if shuffle=True. Test size should be between
+        0 and 1.0 and is the proportion of the sample held back for testing.
+
+        '''
+        if shuffle:
+            index = np.arange(self.N)
+            self.rng.shuffle(index)
+            self.X = self.X[index]
+            self.y = self.y[index]
+        
+        test_N = np.round(self.N*test_size).astype(int)
+        self.X_test = self.X[:test_N]
+        self.y_test = self.y[:test_N]
+        self.X_train = self.X[test_N:]
+        self.y_train = self.y[test_N:]
+        
+    def generate_dataset(self, test_size=0.25, shuffle = True, **kwargs):
         self.generate_X(**kwargs)
         self.generate_y()
+        self.train_test_split(test_size=test_size, shuffle=True)
+        
+    def fit(self, fit_intercept=True):
+        '''
+        Use sklearn to fit the linear regression and "save" results as object
+        attributes. 
+        This function has to be run after .train_test_split method.
+        It calculates:
+            predicted y, for the X_test data
+            score - which is R^2 as in sklearn LinearRegression
+            intercept, coef from sklearn LinearRegression
+            b_pred which is concatenation of intercept and coe and same shape
+                as self.beta
+
+        '''
+        reg = LinearRegression(fit_intercept=fit_intercept)
+        reg = reg.fit(self.X_train, self.y_train)
+        self.y_pred = reg.predict(self.X_test)
+        self.score = reg.score(self.X_test, self.y_test)
+        # intercept and coef attributes are equivalent to scikit learn 
+        # attributes
+        self.intercept = reg.intercept_
+        self.coef = reg.coef_
+        # we also set b_pred attribute. This is equivalent to self.beta: it
+        # includes intercept and other coeffs and is same shape as self.beta
+        b = np.concatenate((self.intercept, 
+                            np.resize(self.coef, (self.coef.size))
+                            ))
+        self.b_pred = b[:, np.newaxis]
              
     def plot2D(self, i=1):
         '''
@@ -64,6 +114,8 @@ class GenerateData(ABC):
         
         ###### ToDo
         put line of best fit from regression results
+        
+        maybe change x and X variable below to make less confusing
         ######
         
         Parameters
@@ -73,6 +125,7 @@ class GenerateData(ABC):
             1, so choose 1 for X_1 and p for final column of X
             
         '''
+        # variable below is the selected column of X data
         x = self.X[:,i-1,np.newaxis]
         
         X = np.linspace(x.min(), x.max(), 100)
