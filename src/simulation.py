@@ -23,7 +23,8 @@ def print_coef(X, y, to_print=True):
         print("intercept: "+str(intercept)+"; coef: "+str(coef))
     return     intercept, coef, score, ss_residual
         
-
+#given object of sub-class of GenerateData and frequency of simulation, output mean and variance of coefficients and estimates
+#*arg, **kwarg - same input as those in the corresponding sub-class of GenerateData
 def simulation(object_GenerateData, frequency, *arg, **kwarg):
     data = object_GenerateData
     beta=[]
@@ -59,6 +60,7 @@ def simulation(object_GenerateData, frequency, *arg, **kwarg):
     return sim_result
 
 #allow input with one change factor to vary, given a list of changes expressed as dictionary, e.g. factor={"positions":positions}
+#*arg, **kwarg - same input as those in the corresponding sub-class of GenerateData, except the factor to be varied
 def change_factor(object_GenerateData, frequency, factor, *arg, **kwarg):
     test = object_GenerateData
     d={}
@@ -75,7 +77,7 @@ def change_factor(object_GenerateData, frequency, factor, *arg, **kwarg):
                 d[key].append(result[key])
             d["b0_mean"].append(*result["beta_mean"][0])
             d["b0_variance"].append(*result["beta_variance"][0])
-            for l in range(len(test1.beta)-1):
+            for l in range(len(test.beta)-1):
                 d["b"+str(l+1)+"_mean"].append(result["beta_mean"][1][l])
                 d["b"+str(l+1)+"_variance"].append(result["beta_variance"][1][l])
     return d
