@@ -74,8 +74,8 @@ def outrageous_outlier():
     test = UniformX(N=100, beta=(0,1))
     test.generate_dataset()
     # now make a massive outlier in the training dataset
-    test.X_train[0] = -50
-    test.y_train[0] = 50
+    test.X_train[0] = -250
+    test.y_train[0] = 250
     test.fit()
     test.plot2D()
     print('test score is {}'.format(test.score))
