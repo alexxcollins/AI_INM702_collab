@@ -11,9 +11,12 @@ from Outlier import Outlier, Outlier_position
 from simulation import print_coef, simulation, change_factor
 import numpy as np
 from numpy.random import default_rng
+
 import matplotlib.pyplot as plt 
 from mpl_toolkits import mplot3d
 from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from yellowbrick.regressor import ResidualsPlot
 
 rng = np.random.default_rng()
 
@@ -97,10 +100,23 @@ for estimate_key in ["b0_mean", "b1_mean", "b2_mean", "b0_variance", "b1_varianc
 #initialize for object of GenerateData sub class Outlier
 test3=Outlier(N=1000)
 outlier_number = 10
-outlier_magnitude = 1000
+outlier_magnitude = 200
 positions=Outlier_position([-10,-10], N=outlier_number)
 test3.generate_dataset(magnitude=outlier_magnitude, original_X=X, original_y=y, original_beta=set1.beta, positions=positions)
+test3.fit()
 test3.plot2D()
 
-#to do... residual plot
+#residual plot - library reference: https://www.scikit-yb.org/en/latest/api/regressor/residuals.html
+#initialize for object of GenerateData sub class Outlier
+test4=Outlier(N=1000)
+test4.generate_dataset(magnitude=outlier_magnitude, original_X=X, original_y=y, original_beta=set1.beta, positions=positions)
+
+X=test4.X
+y=test4.y
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) # split the train and test data
+model = LinearRegression() # Instantiate the linear model and visualizer
+visualizer = ResidualsPlot(model)
+visualizer.fit(X_train, y_train)  # Fit the training data to the visualizer
+visualizer.score(X_test, y_test)  # Evaluate the model on the test data
+visualizer.show()                 # Finalize and render the figure
 
