@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 
 rng = np.random.default_rng()
 
-
+#get (and print) coefficients and estimates of linear regression model, given data X, y
 def print_coef(X, y, to_print=True):
     reg = LinearRegression().fit(X, y)
     score=reg.score(X, y)
@@ -25,11 +25,17 @@ def print_coef(X, y, to_print=True):
         
 #given object of sub-class of GenerateData and frequency of simulation, output mean and variance of coefficients and estimates
 #*arg, **kwarg - same input as those in the corresponding sub-class of GenerateData
+#return results in dictionary sim_result
 def simulation(object_GenerateData, frequency, *arg, **kwarg):
+    #initialize
     data = object_GenerateData
     beta=[]
     scores=[]
     ssr=[] #sum of sqaures of residuals
+    #remove Deprecation Warning
+    np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+    
+    #get coefficients and estimates for each simulation/generation of data
     for i in range (frequency):
         data.generate_dataset(*arg, **kwarg)
         intercept, coef, score, ss_residual = print_coef(data.X, data.y, to_print=False)
@@ -37,7 +43,7 @@ def simulation(object_GenerateData, frequency, *arg, **kwarg):
         scores.append(score)
         ssr.append(ss_residual)
         
-    #adjust for sample variance by frequency/(frequency-1)
+    #compute mean and variance, adjust for sample variance by frequency/(frequency-1)
     beta_mean = np.average(beta, axis=0) 
     beta_variance = np.var(beta, axis=0)*frequency/(frequency-1)   
     score_mean = np.average(scores)
@@ -45,7 +51,7 @@ def simulation(object_GenerateData, frequency, *arg, **kwarg):
     ssr_mean = np.average(ssr)
     ssr_variance = np.var(ssr)*frequency/(frequency-1)
 
-
+    #store results in dictionary
     sim_result = {
         "beta_mean":beta_mean,
         "beta_variance":beta_variance,
@@ -61,14 +67,17 @@ def simulation(object_GenerateData, frequency, *arg, **kwarg):
 
 #allow input with one change factor to vary, given a list of changes expressed as dictionary, e.g. factor={"positions":positions}
 #*arg, **kwarg - same input as those in the corresponding sub-class of GenerateData, except the factor to be varied
+#return results in dictionary d
 def change_factor(object_GenerateData, frequency, factor, *arg, **kwarg):
     test = object_GenerateData
+    #initialize dictionary d to receive the results
     d={}
     for key in ("score_mean", "score_variance", "ssr_mean", "ssr_variance"):
         d[key]=[]
     for l in range(len(test.beta)):
         d["b"+str(l)+"_mean"]=[]
         d["b"+str(l)+"_variance"]=[]
+    #simulation for iput given, looping over the changing factor 
     for key_factor, change_value in factor.items():
         for change in change_value:
             kw = {key_factor: change}
