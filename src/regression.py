@@ -26,6 +26,19 @@ class GenerateData(ABC):
     '''
 
     def __init__(self, N=1000, beta=(1,2,3), noise_var=1):
+        '''
+        
+        N : integer
+            DSample size. The default is 1000.
+        beta : array or array-like, optional
+            The values of the coefficients. beta = (b0, b1, b2) will give
+            y = b0 + b1*x1 + b2*x2 + e. Can by any length.
+            beta = (1,1) will give univariate regression; beta=(1,1,1,1) will
+            be consistent with X of dim 3.
+        noise_var : float, optional
+            variance of epsilon. The default is 1.
+
+        '''
         # not sure where to set random seed. Should we do this in Jupyter notebook?
         # and pass into the class?
         self.rng = default_rng(42)
@@ -127,8 +140,12 @@ class GenerateData(ABC):
         X_i = self.X[:,i-1,np.newaxis]
         
         X = np.linspace(X_i.min(), X_i.max(), 100)
-        y_beta = self.beta[0] + self.beta[i] * X
-        y_fitted = self.b_pred[0] + self.b_pred[i] * X
+        y_beta = self.beta[0] + np.dot(self.beta[1:].reshape(-1), self.mean) +\
+            self.beta[i] * (X - self.mean[i-1])
+        y_fitted = self.b_pred[0] + \
+            np.dot(self.coef.reshape(-1), self.X.mean(axis=0)) + \
+            self.b_pred[i] * (X - X.mean())
+        y_fitted#.resize(y_fitted.size)
         
         fig, ax = plt.subplots()
         if true_beta_line:
@@ -136,6 +153,7 @@ class GenerateData(ABC):
         if fitted_line:
             ax.plot(X, y_fitted, color='g')
         ax.scatter(X_i, self.y, color='b', alpha=0.2)
+
         
     # next two functions used to generate integer range around (a, b)
     # use round_down(a) - returns integer below a, and works if a is +ve or -ve

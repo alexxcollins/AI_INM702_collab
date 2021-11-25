@@ -8,6 +8,9 @@ Created on Sun Nov 21 15:00:30 2021
 
 from regression import UniformX
 from colinearity import ColinearX
+from matplotlib import pyplot as plt
+import numpy as np
+
 
 #%% visualisation tests
 def d2test():
@@ -68,6 +71,31 @@ def pairwise_test2(mean=None, cov=0.3):
     print('predicted b is {}'.format(test.b_pred))
     print('beta of underlying distribution is {}'.format(test.beta))
     return test
+
+def co_error(mean=None, cov=0.3, plot_dim=0):
+    test = ColinearX(beta=(1,2,3,4,2))
+    test.generate_dataset(mean=mean, cov=cov)
+    test.fit()
+    test.plot2D()
+    test.plot2D(i=2)
+    test.plot2D(i=3)
+    test.plot2D(i=4)
+    
+    fig, ax = plt.subplots()
+    ax.scatter(test.y_pred.reshape(test.y_pred.size), test.X_test[:,plot_dim])
+    ax.scatter(test.y_test.reshape(test.y_pred.size), test.X_test[:,plot_dim])
+    
+    return test
+
+def plot(regr=[]):
+    for r in regr:
+        fig, axs = plt.subplots(2,2)
+        for i, ax in enumerate(axs.flatten()):
+            ax.hist(r.X[:,i], bins=20)
+        plt.show()
+        for i in range(4):
+            r.plot2D(i+1)
+
 
 #%% test fit lines when there is a really massive outlier
 def outrageous_outlier():
