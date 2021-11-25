@@ -69,6 +69,15 @@ def pairwise_test2(mean=None, cov=0.3):
     print('beta of underlying distribution is {}'.format(test.beta))
     return test
 
+def test_uniform_normal(mean=None, cov=0.6):
+    test = ColinearX(beta=(0, 3, 1, 2, 2))
+    test.generate_X()
+    test.fit()
+    test.plot2D()
+    test.plot2D(i=2)
+    test.plot2D(i=3)
+    test.plot2D(i=4)
+
 #%% test fit lines when there is a really massive outlier
 def outrageous_outlier():
     test = UniformX(N=100, beta=(0,1))
