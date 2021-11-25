@@ -132,10 +132,13 @@ class GenerateData(ABC):
         
         fig, ax = plt.subplots()
         if true_beta_line:
-            ax.plot(X, y_beta, color='r')
+            ax.plot(X, y_beta, color='r', label='true beta')
         if fitted_line:
-            ax.plot(X, y_fitted, color='g')
-        ax.scatter(X_i, self.y, color='b', alpha=0.2)
+            ax.plot(X, y_fitted, color='g', label='fitted beta')
+        ax.scatter(X_i, self.y, color='b', alpha=0.2, label='y vs X_{}'
+                   .format(i))
+        ax.legend()
+        plt.show()
         
     # next two functions used to generate integer range around (a, b)
     # use round_down(a) - returns integer below a, and works if a is +ve or -ve
