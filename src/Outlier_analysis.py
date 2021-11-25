@@ -111,9 +111,8 @@ test3.plot2D()
 test4=Outlier(N=1000)
 test4.generate_dataset(magnitude=outlier_magnitude, original_X=X, original_y=y, original_beta=set1.beta, positions=positions)
 
-X=test4.X
-y=test4.y
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) # split the train and test data
+
+X_train, X_test, y_train, y_test = train_test_split(test4.X, test4.y, test_size=0.2, random_state=42) # split the train and test data
 model = LinearRegression() # Instantiate the linear model and visualizer
 visualizer = ResidualsPlot(model)
 visualizer.fit(X_train, y_train)  # Fit the training data to the visualizer
