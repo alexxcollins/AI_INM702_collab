@@ -103,7 +103,7 @@ class GenerateData(ABC):
                             ))
         self.b_pred = b[:, np.newaxis]
              
-    def plot2D(self, i=1, fitted_line=True, true_beta_line=True):
+    def plot2D(self, i=None, fitted_line=True, true_beta_line=True):
         '''
         plot the scatter of y and X_i. The user can select the column of X
         to plot by setting i.
@@ -130,6 +130,25 @@ class GenerateData(ABC):
         y_beta = self.beta[0] + self.beta[i] * X
         y_fitted = self.b_pred[0] + self.b_pred[i] * X
         
+        num_plots = 1
+        i is None: num_plots = self._p
+        
+        fix, ax = plt.subplots(min(2, num_plots), num_plots // 2)
+        for j, ax in enumerate(ax.flatten()):
+            if i is not None: j = i-1
+            
+            X_i = self.X[:,i,np.newaxis]
+            X = np.linspace(X_i.min(), X_i.max(), 100)
+            y_beta = self.beta[0] + self.beta[i+1] * X
+            y_fitted = self.b_pred[0] + self.b_pred[i] * X
+            
+            ax.scatter(X_i, self.y, color='b', alpha=0.2, label='y vs X_{}'
+                       .format(i))
+            if true_beta_line:
+                ax.plot(X, y_beta, color='r', label='true beta')
+            if fitted_line:
+                ax.plot(X, y_fitted, color='g', label='fitted beta')
+    
         fig, ax = plt.subplots()
         if true_beta_line:
             ax.plot(X, y_beta, color='r', label='true beta')
