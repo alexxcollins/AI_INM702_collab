@@ -116,14 +116,18 @@ class GenerateData(ABC):
                             ))
         self.b_pred = b[:, np.newaxis]
              
-    def plot2D(self, i=1, fitted_line=True, true_beta_line=True):
+    def plot2D(self, i=None, fitted_line=True, true_beta_line=True):
         '''
         plot the scatter of y and X_i. The user can select the column of X
-        to plot by setting i.
+        to plot by setting i. If i is None then y is plotted vs each dimension 
+        of X in turn.
         
-        takes the beta (intercept + x_i coefficient) of the original data to 
-        create a visualisation of the line showing the relationship between
-        X and y, as well as a scatter plot of the data.
+        take the beta coefficient relating to X_i to caluculate slope. The 
+        intercept is b_0 + the dot product of betas for X_j (j != i) multiplied
+        by X_j.mean().
+        
+        The scatter of X_i and y is plotted. The fitted line, and the "true"
+        corresponding to the original beta coefficients can also be plotted.
         
         ###### ToDo
         options to print title for chart and equation for line of best fit
@@ -136,23 +140,44 @@ class GenerateData(ABC):
             1, so choose 1 for X_1 and p for final column of X
             
         '''
-        # variable below is the selected column of X data
-        X_i = self.X[:,i-1,np.newaxis]
+        num_plots = 1
+        if i is None: num_plots = self._p
         
-        X = np.linspace(X_i.min(), X_i.max(), 100)
-        y_beta = self.beta[0] + np.dot(self.beta[1:].reshape(-1), self.mean) +\
-            self.beta[i] * (X - self.mean[i-1])
-        y_fitted = self.b_pred[0] + \
-            np.dot(self.coef.reshape(-1), self.X.mean(axis=0)) + \
-            self.b_pred[i] * (X - X.mean())
-        y_fitted#.resize(y_fitted.size)
-        
-        fig, ax = plt.subplots()
-        if true_beta_line:
-            ax.plot(X, y_beta, color='r')
-        if fitted_line:
-            ax.plot(X, y_fitted, color='g')
-        ax.scatter(X_i, self.y, color='b', alpha=0.2)
+        cols = min(2, num_plots)
+        rows = (num_plots + 1) // 2
+        fig, axs = plt.subplots(cols, rows, figsize=(cols*5, rows*4))
+        fig.suptitle("y vs one dimension of X. Fitted line, true line and scatter")
+        for j in range(num_plots):
+            ax = axs.flatten()[j] if num_plots > 1 else axs
+            if i is not None: j = i-1
+            
+            X_i = self.X[:,j,np.newaxis]
+            X = np.linspace(X_i.min(), X_i.max(), 100)
+            y_true_intercept = self.beta[0] + \
+                np.dot(self.beta[1:].reshape(-1), self.X.mean(axis=0))
+            y_beta = self.beta[j+1] * (X - self.X.mean(axis=0)[j])
+            y_fitted_intercept = self.b_pred[0] + \
+                np.dot(self.coef.reshape(-1), self.X.mean(axis=0))
+            y_fitted = self.b_pred[j+1] * (X - X.mean())
+            
+            ax.scatter(X_i, self.y, color='b', alpha=0.2, label='y vs X_{}'
+                       .format(j+1))
+            if true_beta_line:
+                ax.plot(X, y_beta, color='r', label='true beta')
+            if fitted_line:
+                ax.plot(X, y_fitted, color='g', label='fitted beta')
+            ax.legend()
+            ax.text(X.max(), self.y.min(), 
+                    r'true: $y = $' + '{:.2f}'.format(y_true_intercept[0]) + \
+                    r'$ + $' + r'{:.2f}'.format(self.beta[j+1][0]) + \
+                    r'$*(X-\bar{X})$' + \
+                    '\n' + \
+                    r'fitted: $y = $' + '{:.2f}'.format(y_fitted_intercept[0]) + \
+                    r'$ + $' + r'{:.2f}'.format(self.b_pred[j+1][0]) + \
+                    r'$*(X-\bar{X})$', fontsize=8,
+                    verticalalignment='bottom', horizontalalignment='right')
+    
+        plt.show()
 
         
     # next two functions used to generate integer range around (a, b)

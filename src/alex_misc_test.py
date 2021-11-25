@@ -72,9 +72,14 @@ def pairwise_test2(mean=None, cov=0.3):
     print('beta of underlying distribution is {}'.format(test.beta))
     return test
 
+
 def co_error(mean=None, cov=0.3, plot_dim=0):
     test = ColinearX(beta=(1,2,3,4,2))
     test.generate_dataset(mean=mean, cov=cov)
+
+def test_uniform_normal(mean=None, cov=0.6):
+    test = ColinearX(beta=(0, 3, 1, 2, 2))
+    test.generate_X()
     test.fit()
     test.plot2D()
     test.plot2D(i=2)
@@ -95,7 +100,6 @@ def plot(regr=[]):
         plt.show()
         for i in range(4):
             r.plot2D(i+1)
-
 
 #%% test fit lines when there is a really massive outlier
 def outrageous_outlier():
