@@ -80,15 +80,20 @@ def co_error(mean=None, cov=0.3, plot_dim=0):
 def test_uniform_normal(mean=None, cov=0.6):
     test = ColinearX(beta=(0, 3, 1, 2, 2))
     test.generate_X()
+    test.to_uniform(i_list=(1,2,3))
+    test.generate_y()
+    test.train_test_split()
     test.fit()
+    fig, axs = plt.subplots(2,2)
+    for i, ax in enumerate(axs.flatten()):
+        ax.hist(test.X[:,i], bins=20)
+        ax.title.set_text('distribution of X_{}'.format(i+1))
+    plt.subplots_adjust(top=0.99, bottom=0.01, left=0.05, right=0.95, hspace=0.25,
+                    wspace=0.35)
+    plt.show()
+    plt.scatter(test.X[:,0], test.X[:,1], alpha=0.2)
     test.plot2D()
-    test.plot2D(i=2)
-    test.plot2D(i=3)
-    test.plot2D(i=4)
     
-    fig, ax = plt.subplots()
-    ax.scatter(test.y_pred.reshape(test.y_pred.size), test.X_test[:,plot_dim])
-    ax.scatter(test.y_test.reshape(test.y_pred.size), test.X_test[:,plot_dim])
     
     return test
 
