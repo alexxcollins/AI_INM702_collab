@@ -12,6 +12,10 @@ from abc import ABC, abstractmethod
 import numpy as np
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
+import scipy.stats as sps
+import seaborn as sns
+
+sns.set(style="ticks")
 
 
 # %% GnerateData
@@ -53,8 +57,8 @@ class GenerateData(ABC):
         # at the moment discourage changing with underscore rather than setters
         self.e_var = noise_var
 
-    def _generate_epsilon(self):
-        return self.rng.normal(0, self.e_var ** (1 / 2), size=(self.N, 1))
+    def _generate_epsilon(self, noise_var):
+        return self.rng.normal(0, noise_var ** (1 / 2), size=(self.N, 1))
 
     @abstractmethod
     def generate_X(self, low=None, high=None):
@@ -63,7 +67,7 @@ class GenerateData(ABC):
 
     def generate_y(self):
         """Generate y using X, noise_var and beta. y = b0 + b @ X + e."""
-        self.e = self._generate_epsilon()
+        self.e = self._generate_epsilon(self.e_var)
         self.y = np.matmul(self.X1, self.beta) + self.e
 
     def train_test_split(self, test_size=0.25, shuffle=True):
@@ -109,6 +113,7 @@ class GenerateData(ABC):
         reg = LinearRegression(fit_intercept=fit_intercept)
         reg = reg.fit(self.X_train, self.y_train)
         self.y_pred = reg.predict(self.X_test)
+        self.residuals = self.y_test - self.y_pred
         self.score = reg.score(self.X_test, self.y_test)
         # intercept and coef attributes are equivalent to scikit learn
         # attributes
@@ -123,9 +128,8 @@ class GenerateData(ABC):
         """
         Plot the scatter of y and X_i.
 
-        The user can select the column of X
-        to plot by setting i. If i is None then y is plotted vs each dimension
-        of X in turn.
+        The user can select the column of X to plot by setting i. If i is None
+        then y is plotted vs each dimension of X in turn.
 
         take the beta coefficient relating to X_i to caluculate slope. The
         intercept is b_0 + the dot product of betas for X_j (j != i) multiplied
@@ -198,6 +202,76 @@ class GenerateData(ABC):
                 verticalalignment="bottom",
                 horizontalalignment="right",
             )
+
+        plt.show()
+
+    def plot_residuals(self, i=None, n_bins=20):
+        """Plot histogram of residuals and residuals against each X_i.
+
+        Option to select a dimension of X to plot residuals against.
+        n_bins - integer number of bins for histogram plot
+
+        code to plot the normal pdf was adapted from stack overflow answer:
+        https://stackoverflow.com/questions/11315641/python-plotting-a-histogram-with-a-function-line-on-top
+        """
+        num_plots = 2
+        if i is None:
+            num_plots = self._p + 1
+
+        cols = min(2, num_plots)
+        rows = (num_plots + 1) // 2
+        fig, axs = plt.subplots(rows, cols, figsize=(cols * 5, rows * 4))
+        fig.suptitle("residuals: histogram and against features")
+
+        # plot a histogram of residuals
+        ax = axs.flatten()[0]
+        # parameterise the normal distribution to display
+        n = sps.norm(0, np.std(self.residuals))
+        # add histogram showing individual components
+        ax.hist(
+            self.residuals,
+            bins=n_bins,
+            histtype="bar",
+            density=True,
+            alpha=0.4,
+            edgecolor="none",
+        )
+        # get X limits and fix them
+        mn, mx = ax.get_xlim()
+        ax.set_xlim(mn, mx)
+        # add our distributions to figure
+        x = np.linspace(mn, mx, 301)
+        ax.plot(x, n.pdf(x), color="C1", ls="--", label="normal pdf")
+        # estimate Kernel Density and plot
+        kde = sps.gaussian_kde(self.residuals.reshape(-1))
+        ax.plot(x, kde.pdf(x), color="C0", label="residual sample pdf")
+        # finish up
+        ax.legend()
+        ax.set_ylabel("Probability density")
+        sns.despine()
+
+        # plot the residuals vs X (features)
+        for j in range(1, num_plots):
+            ax = axs.flatten()[j]
+            if i is not None:
+                j = i - 1
+
+            # try:
+            X_i = self.X_test[:, j - 1, np.newaxis]
+
+            ax.scatter(
+                X_i,
+                self.residuals,
+                color="b",
+                alpha=0.2,
+                label="residual vs X_{}".format(j),
+            )
+            ax.legend(loc="upper left")
+        # if there are an even number of features there will be an
+        # IndexError as the last plot will attempt to plot for non-existant
+        # feature.
+        # except IndexError:
+        #     pass
 
         plt.show()
 

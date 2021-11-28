@@ -82,5 +82,81 @@ class ColinearX(GenerateData):
             self.X1[:, i] = norm.cdf(self.X1[:, i])
             self.X[:, i - 1] = self.X1[:, i]
 
+    def remove_Xi(self, i=1):
+        """
+        Remove a column from X.
+
+        Usecase is to remove potentially redundantX_i from the model - e.g.
+        if there is a colinearity.
+
+        Adjust all relevant attributes of GenerateData object.
+
+        Parameters
+        ----------
+        i : integer, optional
+            The 1-indexed dimension of X to remove. i can be 1, ... p.
+            The default is 1.
+        """
+        self._p -= 1
+        self._p1 -= 1
+        # create mask to remove desired row/column from beta, X etc
+        mask = np.ones(self.beta.size, bool)
+        mask[i] = False
+        self.beta = self.beta[mask]
+        self.X1 = self.X1[:, mask]
+        # .X is just .X1 without the first column of ones
+        self.X = self.X1[:, 1:]
+        # if .train_test_split() has been run then adjust X_train and X_test
+        try:
+            # self.X is of size one less than self.X1 so needs a smaller mask
+            mask = np.ones(self.X_test.shape[1], bool)
+            mask[i - 1] = False
+            self.X_test = self.X_test[:, mask]
+            self.X_train = self.X_train[:, mask]
+        except AttributeError:
+            pass
+
+            # if model has been fit, wipe the results
+            self.y_pred = None
+            self.score = None
+            self.intercept = None
+            self.coef = None
+            self.b_pred = None
+
+    def add_linear_combination(self, i_list=[], beta=(), y_beta=1, noise_var=0.5):
+        """
+        Create a new column of X as a linear combination of existing cols.
+
+        This method should be run after X has been created and before
+        .generate_y() method has been run.
+
+        Adjust all relevant attributes of GenerateData object, and set
+        parameters for the creation of the new column of X.
+
+        Parameters
+        ----------
+        i : list of integers
+            The 1-indexed dimension of X_i's to combine. i can be 1, ... p.
+        beta : array_like of floats
+               The beta array (intercept plus coefficients) used to create
+               the new feature.
+        y_beta : float
+                 We need to add a beta coefficient for the new variable.
+        noise_var : float
+                    The variance of the N(0, var) noise term in the model.
+        """
+        self._p += 1
+        self._p1 += 1
+        i_list = [0] + i_list
+        beta = np.array(beta)[:, np.newaxis]
+        epsilon = self._generate_epsilon(noise_var=noise_var)
+        new = np.matmul(self.X1[:, i_list], beta) + epsilon
+        self.X = np.concatenate([self.X, new], axis=1)
+        self.X1 = np.concatenate([self.X1, new], axis=1)
+        # change the beta used to create y - different form beta used to
+        # create the new X_i
+        self.beta = np.concatenate([self.beta, np.array(y_beta).reshape(1, 1)])
+
     def variance_inflation_factor():
         """Calculate variance inflation factors for X."""
+        pass
