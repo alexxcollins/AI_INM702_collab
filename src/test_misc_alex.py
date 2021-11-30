@@ -21,9 +21,6 @@ def d2test():
     return test
 
 
-# changing something in master
-
-
 def d3test():
     test = UniformX()
     test.generate_dataset()
