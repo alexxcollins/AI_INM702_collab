@@ -21,7 +21,7 @@ from sklearn.model_selection import train_test_split
 rng = np.random.default_rng()
 
 #initialize for object of GenerateData sub class ColinearX
-test_colinear=ColinearX(N=1000, random_seed=None)
+test_colinear=ColinearX(N=1000, random_seed=42)
 
 #set list of changing correlation
 correlation_list = [i/10 for i in range(-9,10)]
