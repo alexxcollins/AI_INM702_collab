@@ -31,7 +31,7 @@ class GenerateData(ABC):
     be used to generate or supply difference Xs, with outliers, co-depence etc.
     """
 
-    def __init__(self, N=1000, beta=(1, 2, 3), noise_var=1):
+    def __init__(self, N=1000, beta=(1, 2, 3), noise_var=1, random_seed=None):
         """
         Initialise regression object.
 
@@ -48,7 +48,7 @@ class GenerateData(ABC):
         """
         # not sure where to set random seed. Should we do this in Jupyter
         # notebook? and pass into the class?
-        self.rng = default_rng()
+        self.rng = default_rng(random_seed)
         self.N = N
         self._p = len(beta) - 1
         self._p1 = len(beta)

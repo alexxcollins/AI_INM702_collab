@@ -125,6 +125,16 @@ def colinear_test():
     test.plot2D()
     # test.plot_residuals()
     print("R^2 = {}".format(test.score))
+
+    test.remove_Xi(5)
+    test.fit()
+    test.plot2D()
+    print("R^2 = {}".format(test.score))
+
+    test.remove_Xi(4)
+    test.fit()
+    test.plot2D()
+    print("R^2 = {}".format(test.score))
     return test
 
 
@@ -133,10 +143,11 @@ def outrageous_outlier():
     test = UniformX(N=100, beta=(0, 1))
     test.generate_dataset()
     # now make a massive outlier in the training dataset
-    test.X_train[0] = -250
-    test.y_train[0] = 250
+    test.X_train[0] = -50
+    test.y_train[0] = 50
     test.fit()
     test.plot2D()
+    test.plot_residuals()
     print("test score is {}".format(test.score))
     print("predicted b is {}".format(test.b_pred))
     print("beta of underlying distribution is {}".format(test.beta))
