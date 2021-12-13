@@ -32,33 +32,65 @@ def sigmoid(Z):
     """
     Parameters
     ----------
-    Z: scalr or array-like
+    Z: scalar or array-like
     
     Returns
     -------
     A: sigmoid value to each element of Z, same shape as Z
     """
-    A = 1 / (1 + np.exp(Z))
+    A = 1 / (1 + np.exp(-Z))
     return A
+
+def sigmoid_derivative(Z):
+    """
+    Parameters
+    ----------
+    Z: scalar or array-like
     
+    Returns
+    -------
+    derivative: compute derivative element-vise to Z
+    """
+    derivative = np.divide(np.exp(-Z),(1+np.exp(-Z))**2)
+    return derivative
+
 def softmax(Z):
     """
 
     Parameters
     ----------
-    Z : array-like of one dimension
+    Z : array of shape (no of nodes, no of samples)
 
     Returns
     -------
-    A: softmax values corresponding to each element of Z
+    A: softmax values of shape (no of nodes, no of samples)
 
     """
-    A = np.exp(Z)/np.sum(np.exp(Z))
+    eZ = np.exp(Z)
+    sum_eZ = np.sum(eZ, axis=0)  # this gives shape of (1, m)
+    A = np.divide(eZ, sum_eZ)    # matrix broadcasting
     return A
     
+
+def softmax_derivative(Z):
+    """
+    Parameters
+    ----------
+    Z: scalar or array-like
+    
+    Returns
+    -------
+    derivative: compute derivative element-vise to Z
+    """
+    derivative = 
+    return derivative
+
+
 def relu():
     pass
 
+def relu_derivative():
+    pass
 
 def init_parameter(n_current, n_prev, scale):
     """
@@ -76,9 +108,9 @@ def init_parameter(n_current, n_prev, scale):
     b: bias for current layer
 
     """
-    if scale =='Xavier': #Xavier initilization
+    if scale =='Xavier': #Xavier initialization
         scale = (1/n_prev)**0.5
-    else if scale =="He": #He initilization
+    else if scale =="He": #He initialization
         scale = (2/n_prev)**0.5
         
     W = np.random.normal(size = (n_current, n_prev))*scale
@@ -122,22 +154,27 @@ def forward_activate(Z, activation):
     """
     if activation == 'sigmoid':
         A = sigmoid(Z)
-    else if activation == 'relu':
+    if activation == 'relu':
         A = relu(Z)
-    else if activation == 'softmax':
+    if activation == 'softmax':
         A = softmax(Z)
     
     return A
     
     
-def backprop_activate(dA, activation):
+def backprop_activate(dA, Z, activation):
     if activation == "sigmoid":
-        
-    
+        derivative = sigmoid_derivative(Z)
+    if activation == "softmax":
+        derivative = softmax_derivative(Z)
+    if activation == "relu":
+        derivative = relu_derivative(Z) 
+    dZ = dA * derivative
     
     return dZ
     
-def backprop_linear():
+
+def backprop_linear(dZ):
     
     
     return dA_prev, dW, db
@@ -160,13 +197,11 @@ def cost_function(prob_predict, y_true, m, regularization_lambda):
 
     Returns
     -------
-    J : TYPE
-        DESCRIPTION.
+    J : cost reflecting the prediction error
 
     """
 
     r = 0.5 * regularization_lambda * np.sum(W**2)/m
-
     J = - np.sum(np.multiply(y_true, log(prob_predict)))/m + r
     
     return J
@@ -176,6 +211,7 @@ def cost_function(prob_predict, y_true, m, regularization_lambda):
     
 
 def mask(shape, dropout):
+    pass
 
     
 
@@ -200,8 +236,12 @@ class NN():
         self.b={} #bias
         self.Z={} #pre-activation values, linear combination Z = WX + b
         self.A={} #activation values
-
-
+        
+        #create empty dictionary for corresponding gradient
+        self.dW={}
+        self.db={}
+        self.dZ={}
+        self.dA={}
         
 
     def add(self, N, activation='sigmoid', dropout=0):
@@ -251,8 +291,8 @@ class NN():
 
         Parameters
         ----------
-        X_train : array of shape (no of samples, no of features), data for training
-        y_train : array of shape (no of samples), target value
+        X_train : array of shape (no of features, no of samples), data for training
+        y_train : array of shape (no of classes, no of samples), target value
 
         Returns
         -------
@@ -261,6 +301,7 @@ class NN():
         """
         self.X_train = X_train
         self.y_train = y_train
+        self.m = len(self.y_train)  #get no of samples
         
         #initialize weight and bias
         np.random.seed(self.seed)
@@ -269,21 +310,37 @@ class NN():
         
         #initialize "activation" of layer 0
         self.A[0]=self.X_train
-        # forward propagation
-        for l in range(1, self.layer):
-            self.Z[l] = forward_linear(self.W[l], self.A[l-1], self.b[l])
-            self.A[l] = forward_activate(self.Z[l], self.activation[l])
         
-        #compute the cost
-        self.m = len(self.y_train)
-        J = cost_function(self.A[self.layer], self.y_train, self.m, self.regularization_lambda)
+        for e in range(self.epochs):
+            # forward propagation
+            for l in range(1, self.layer):
+                self.Z[l] = forward_linear(self.W[l], self.A[l-1], self.b[l])
+                self.A[l] = forward_activate(self.Z[l], self.activation[l])
         
-        #backpropagation
+            #compute the cost
+
+            J = cost_function(self.A[self.layer], self.y_train, self.m, self.regularization_lambda)
         
+            #backpropagation
+            self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
+            for l in reversed(range(self.layer)):
+                self.dZ[l+1] = backprop_activate(self.dA[l+1], self.Z[l+1], self.activation[l+1])
 
         
         
     def predict(self, X_enquiry):
+        """
+        Predict the target values
+
+        Parameters
+        ----------
+        X_enquiry : array of shape (no of features, no of samples)
+       
+        Returns
+        -------
+        y_predict: array of shape (no of classes, no of samples)
+
+        """
         #initialize "activation" of layer 0
         self.A[0]=X_enquiry
         # forward propagation
@@ -291,7 +348,7 @@ class NN():
             self.Z[l] = forward_linear(self.W[l], self.A[l-1], self.b[l])
             self.A[l] = forward_activate(self.Z[l], self.activation[l])
         
-        y_predict = self.A[self.layer]
+        y_predict = self.A[self.layer]  #need to further change to either 0 or 1
         
         return y_predict
         
