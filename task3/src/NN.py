@@ -41,7 +41,7 @@ def sigmoid(Z):
     A = 1 / (1 + np.exp(-Z))
     return A
 
-def sigmoid_derivative(Z, A='none'):
+def sigmoid_derivative(Z, A=None):
     """
     Parameters
     ----------
@@ -52,7 +52,7 @@ def sigmoid_derivative(Z, A='none'):
     -------
     derivative: compute derivative element-vise to Z
     """
-    if A='none':
+    if A is None:
         derivative = sigmoid(Z) * (1 - sigmoid(Z))
     else:
         derivative = A * (1 - A)
@@ -76,7 +76,7 @@ def softmax(Z):
     return A
     
 
-def softmax_derivative(Z, A='none'):
+def softmax_derivative(Z, A=None):
     """
     Parameters
     ----------
@@ -88,7 +88,7 @@ def softmax_derivative(Z, A='none'):
     derivative: compute derivative element-vise to Z
     """
     #maths behind softmax derivative: https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
-    if A='none':
+    if A is None:
         derivative = softmax(Z) * (1 - softmax(Z))
     else:
         derivative = A * (1 - A)
@@ -119,7 +119,7 @@ def init_parameter(n_current, n_prev, scale):
     """
     if scale =='Xavier': #Xavier initialization
         scale = (1/n_prev)**0.5
-    else if scale =="He": #He initialization
+    if scale =="He": #He initialization
         scale = (2/n_prev)**0.5
         
     W = np.random.normal(size = (n_current, n_prev))*scale
@@ -197,7 +197,7 @@ def backprop_activate(dA, Z, activation, A):
     return dZ
     
 
-def backprop_linear(dZ, W, A_prev, regularization_lambda):
+def backprop_linear(dZ, W, A_prev, regularization_lambda, m):
     """
 
     Parameters
@@ -240,7 +240,7 @@ def update_parameter(W, b, dW, db, learning_rate):
 
     """
     W = W - dW * learning_rate
-    b = b - dB * learning_rate
+    b = b - db * learning_rate
     return W, b
   
 
@@ -346,7 +346,7 @@ class NN():
         self.seed = seed
 
     
-    def fit(self, X_train, y_train):
+    def fit(self, X_train, y_train, visible=False):
         """
         Training the neural network given the traiing data
 
@@ -366,11 +366,11 @@ class NN():
         self.y_train = np.transpose(y_train)
         self.J =[]
         self.m = len(self.y_train)  #get no of samples
-        self.m_mini = batch_size    #Alex to work on mini batch or other optimizers
+        self.m_mini = self.batch_size    #Alex to work on mini batch or other optimizers
         
         #initialize weight and bias
         np.random.seed(self.seed)
-        for l in range(1, self.layer):
+        for l in range(1, self.layer+1):
             self.W[l], self.b[l] = init_parameter(n_current=self.N[l], n_prev=self.N[l-1], scale=self.weight_scale)
         
         #initialize A[0]
@@ -381,19 +381,23 @@ class NN():
         for e in range(self.epochs):
 
             # forward propagation
-            for l in range(1, self.layer):
+            for l in range(1, self.layer+1):
                 self.Z[l] = forward_linear(self.W[l], self.A[l-1], self.b[l])
                 self.A[l] = forward_activate(self.Z[l], self.activation[l])
         
             #compute the cost and store in self.J
-            self.J.append(cost_function(self.A[self.layer], self.y_train, self.m, self.regularization_lambda))
+            #self.J.append(cost_function(self.A[self.layer], self.y_train, self.m, self.regularization_lambda))
         
             #backpropagation
+         
             self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
             for l in reversed(range(1, self.layer+1)):
                 self.dZ[l] = backprop_activate(self.dA[l], self.Z[l], self.activation[l], self.A[l])
-                self.dA[l-1], self.dW[l], self.db[l] = backprop_linear(self.dZ[l], self.W[l], self.A[l-1], self.regularization_lambda)
+                self.dA[l-1], self.dW[l], self.db[l] = backprop_linear(self.dZ[l], self.W[l], self.A[l-1], self.regularization_lambda, self.m)
                 self.W[l], self.b[l] = update_parameter(self.W[l], self.b[l], self.dW[l], self.db[l], self.learning_rate)
+            
+            if visible:
+                print('epoch '+str(e))
 
         
         
@@ -430,7 +434,8 @@ class NN():
     
         
         
-        
+
+
         
                 
     
