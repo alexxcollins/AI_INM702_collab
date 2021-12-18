@@ -99,6 +99,11 @@ def softmax_derivative(Z, A=None):
     derivative: compute derivative element-vise to Z
     """
     # maths behind softmax derivative: https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
+    ####### Alex comment:
+    # I think derivative should be written:
+    # if A is None:
+    #   derivative = softmax(Z) - y
+    # where y is vector of one-hot encoded target values
     if A is None:
         derivative = softmax(Z) * (1 - softmax(Z))
     else:
