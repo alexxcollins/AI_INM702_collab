@@ -179,6 +179,7 @@ def forward_linear(W, X, b):
     ----------
     W : 2-D array of shape (size of current layer, size of previous layer), Weight of nodes
     X : 2-D array, input data or activations from previous layer of shape (size of previous layer, no of samples)
+    ##### Alex comment - should bias be (no of samples, 1) ?
     b : bias, of array shape (size of current layer, 1)
 
     Returns
@@ -198,20 +199,25 @@ def forward_activate(Z, activation):
     ----------
     Z : array-like shape of (no of nodes, no of samples), pre-activation
     activation: type of activation
+    ##### proposed change:
+    activation: function, activation function to use
 
     Returns
     -------
     A: activation values corresponding to each element of Z
 
     """
-    if activation == "sigmoid":
-        A = sigmoid(Z)
-    if activation == "relu":
-        A = relu(Z)
-    if activation == "softmax":
-        A = softmax(Z)
+    # if activation == "sigmoid":
+    #     A = sigmoid(Z)
+    # if activation == "relu":
+    #     A = relu(Z)
+    # if activation == "softmax":
+    #     A = softmax(Z)
 
-    return A
+    # return A
+
+    ##### proposed change:
+    return activation(Z)
 
 
 def backprop_activate(dA, Z, activation, A):
@@ -304,6 +310,7 @@ def cost_function(prob_predict, y_true, m, regularization_lambda):
 
     """
 
+    ### why do we divide by m?
     r = 0.5 * regularization_lambda * np.sum(W ** 2) / m
     J = -np.sum(np.multiply(y_true, log(prob_predict))) / m + r
 
