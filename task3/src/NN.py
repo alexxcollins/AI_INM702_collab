@@ -434,7 +434,11 @@ class NN:
                 self.A[l] = forward_activate(self.Z[l], self.activation[l])
 
             # compute the cost and store in self.J
-            # self.J.append(cost_function(self.A[self.layer], self.y_train, self.m, self.regularization_lambda))
+            self.J.append(
+                cost_function(
+                    self.A[self.layer], self.y_train, self.m, self.regularization_lambda
+                )
+            )
 
             # backpropagation
 
