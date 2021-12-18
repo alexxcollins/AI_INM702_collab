@@ -111,12 +111,35 @@ def softmax_derivative(Z, A=None):
     return derivative
 
 
-def relu():
-    pass
+def relu(Z):
+    """
+    return relu activation output
+
+    Parameters
+    ----------
+    Z : scalar or array (like?)
+
+    Returns
+    -------
+    A: relu of same size as Z
+
+    """
+    return np.where(Z > 0, Z, 0)
 
 
-def relu_derivative():
-    pass
+def relu_derivative(Z, A=None):
+    """
+    Parameters
+    ----------
+    Z : array of shape (no of nodes or classes, no of samples)
+    ####### Alex comment: I'm not quite sure how to deal with A yet
+    A: activation on Z, same shape as Z
+
+    Returns
+    -------
+    derivative: compute derivative element-vise to Z
+    """
+    return np.where(Z > 0, 1, 0)
 
 
 def init_parameter(n_current, n_prev, scale):
@@ -140,6 +163,8 @@ def init_parameter(n_current, n_prev, scale):
     if scale == "He":  # He initialization
         scale = (2 / n_prev) ** 0.5
 
+    #### Alex commenet: do we need to make this reproduceable with random seed?
+    #### Alex comment - why not use np.random.default_rng() - it is preferred approach.
     W = np.random.normal(size=(n_current, n_prev)) * scale
     b = np.zeros((n_current, 1))
 
