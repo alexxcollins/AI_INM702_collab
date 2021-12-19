@@ -61,6 +61,7 @@ def sigmoid_derivative(Z, A=None):
     return derivative
 
 
+#%% softmax
 def softmax(Z):
     """
 
@@ -87,6 +88,7 @@ def softmax(Z):
     return A
 
 
+#%% softmax_derivative
 def softmax_derivative(Z, A=None):
     """
     Parameters
@@ -142,6 +144,7 @@ def relu_derivative(Z, A=None):
     return np.where(Z > 0, 1, 0)
 
 
+#%% init_parameter
 def init_parameter(n_current, n_prev, scale):
     """
     To initialize weight and bias parameter
@@ -171,6 +174,7 @@ def init_parameter(n_current, n_prev, scale):
     return W, b
 
 
+#%% forward_linear
 def forward_linear(W, X, b):
     """
 
@@ -187,11 +191,13 @@ def forward_linear(W, X, b):
     Z: linear combination of weight and previous activated output plus bias, shape (size of current layer, no of samples)
 
     """
+    ##### Alex comment - why isn't bias multiplied by weight? See slide 55 in lecture 7 for eg
     Z = np.matmul(W, X) + b
 
     return Z
 
 
+#%% forward_activate
 def forward_activate(Z, activation):
     """
 
@@ -207,19 +213,20 @@ def forward_activate(Z, activation):
     A: activation values corresponding to each element of Z
 
     """
-    # if activation == "sigmoid":
-    #     A = sigmoid(Z)
-    # if activation == "relu":
-    #     A = relu(Z)
-    # if activation == "softmax":
-    #     A = softmax(Z)
+    if activation == "sigmoid":
+        A = sigmoid(Z)
+    if activation == "relu":
+        A = relu(Z)
+    if activation == "softmax":
+        A = softmax(Z)
 
-    # return A
+    return A
 
     ##### proposed change:
     return activation(Z)
 
 
+#%% backprop_activate
 def backprop_activate(dA, Z, activation, A):
     """
 
@@ -235,6 +242,7 @@ def backprop_activate(dA, Z, activation, A):
     dZ: gradient of Z, same shape as Z
 
     """
+    ##### Alex comment - making function as object should make this faster too
     if activation == "sigmoid":
         derivative = sigmoid_derivative(Z, A)
     if activation == "softmax":
@@ -246,6 +254,7 @@ def backprop_activate(dA, Z, activation, A):
     return dZ
 
 
+#%% backprop_linear
 def backprop_linear(dZ, W, A_prev, regularization_lambda, m):
     """
 
@@ -270,6 +279,7 @@ def backprop_linear(dZ, W, A_prev, regularization_lambda, m):
     return dA_prev, dW, db
 
 
+#%% update_parameter
 def update_parameter(W, b, dW, db, learning_rate):
     """
 
@@ -293,9 +303,10 @@ def update_parameter(W, b, dW, db, learning_rate):
     return W, b
 
 
-def cost_function(prob_predict, y_true, m, regularization_lambda):
+#%% cost_function
+def cost_function(prob_predict, y_true, W, m, regularization_lambda):
     """
-
+    Calculate cross entropy loss
 
     Parameters
     ----------
@@ -321,6 +332,7 @@ def mask(shape, dropout):
     pass
 
 
+#%% class NN
 class NN:
     def __init__(self, input_dim, dropout=0):
         """
@@ -351,6 +363,7 @@ class NN:
         self.dZ = {}
         self.dA = {}
 
+    #%% add layer
     def add(self, N, activation="sigmoid", dropout=0):
         """
         adding one layer to neural network
@@ -364,9 +377,12 @@ class NN:
         """
         self.layer += 1
         self.N.append(N)
+        ### if we change acivation to function object instead of string need to do here too
         self.activation.append(activation)
         self.dropout.append(dropout)
 
+    #%% set hyper parameters
+    # Alex comment: why here and not in __init__??
     def hyper(
         self,
         learning_rate=0.01,
@@ -384,7 +400,7 @@ class NN:
         ----------
         learning_rate: learning rate for updating weight by gradient
         optimizer: type of optimization method
-        regularization: boolean type, whether or not to use L2 regularization
+        regularization_lambda: float, set to 0 if not using L2 regularization
         epochs: max number of epochs for training
         batch_size: batch size for training
         weight_scale: the scale used for initializing weight, multiplied to standard normal random variable
@@ -399,9 +415,10 @@ class NN:
         self.weight_scale = weight_scale
         self.seed = seed
 
+    #%% fit
     def fit(self, X_train, y_train, visible=False):
         """
-        Training the neural network given the traiing data
+        Training the neural network given the training data
 
         Parameters
         ----------
@@ -424,6 +441,7 @@ class NN:
         # initialize weight and bias
         np.random.seed(self.seed)
         for l in range(1, self.layer + 1):
+            #### Alex comment: at the moment biases are all initialised to zeros.
             self.W[l], self.b[l] = init_parameter(
                 n_current=self.N[l], n_prev=self.N[l - 1], scale=self.weight_scale
             )
@@ -443,7 +461,11 @@ class NN:
             # compute the cost and store in self.J
             self.J.append(
                 cost_function(
-                    self.A[self.layer], self.y_train, self.m, self.regularization_lambda
+                    self.A[self.layer],
+                    self.y_train,
+                    self.W[self.layer],
+                    self.m,
+                    self.regularization_lambda,
                 )
             )
 
@@ -488,6 +510,15 @@ class NN:
         for l in range(1, self.layer):
             self.Z[l] = forward_linear(self.W[l], self.A[l - 1], self.b[l])
             self.A[l] = forward_activate(self.Z[l], self.activation[l])
+
+        a = np.transpose(self.A[self.layer])  # transpose predicted probability
+        y_predict = np.zeros_like(a)
+        y_predict[np.arange(len(a)), a.argmax(1)] = 1
+
+        return y_predict
+
+    def evaluate(self, X_test, y_test):
+        self.A[l] = forward_activate(self.Z[l], self.activation[l])
 
         a = np.transpose(self.A[self.layer])  # transpose predicted probability
         y_predict = np.zeros_like(a)
