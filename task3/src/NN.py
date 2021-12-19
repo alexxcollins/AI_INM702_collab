@@ -323,7 +323,7 @@ def cost_function(prob_predict, y_true, W, m, regularization_lambda):
 
     ### why do we divide by m?
     r = 0.5 * regularization_lambda * np.sum(W ** 2) / m
-    J = -np.sum(np.multiply(y_true, log(prob_predict))) / m + r
+    J = -np.sum(np.multiply(y_true, np.log(prob_predict))) / m + r
 
     return J
 
