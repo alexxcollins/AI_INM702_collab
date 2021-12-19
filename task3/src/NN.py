@@ -84,11 +84,15 @@ def softmax(Z):
 
 
 #%% softmax_derivative
-def softmax_derivative(Z, A=None):
+def softmax_derivative(Z, y, A=None):
     """
+    softmax is only ever applied to the final layer - to get probabilities of
+    classes which sum to one.
+
     Parameters
     ----------
-    Z : array of shape (no of nodes or classes, no of samples)
+    Z : array of shape (no of classes, no of samples)
+    y : array of shape (no of classes, no of samples)
     A: activation on Z, same shape as Z
 
     Returns
@@ -102,9 +106,10 @@ def softmax_derivative(Z, A=None):
     #   derivative = softmax(Z) - y
     # where y is vector of one-hot encoded target values
     if A is None:
-        derivative = softmax(Z) * (1 - softmax(Z))
-    else:
-        derivative = A * (1 - A)
+        derivative = softmax(Z) - y
+    #### Alex comment: think below should be derivative = A - y, but not sure how it's being used
+    # else:
+    #     derivative = A * (1 - A)
     return derivative
 
 
@@ -223,7 +228,7 @@ def forward_activate(Z, activation):
 
 
 #%% backprop_activate
-def backprop_activate(dA, Z, activation, A):
+def backprop_activate(dA, Z, y, activation, A):
     """
 
     Parameters
@@ -241,11 +246,12 @@ def backprop_activate(dA, Z, activation, A):
     ##### Alex comment - making function as object should make this faster too
     if activation == "sigmoid":
         derivative = sigmoid_derivative(Z, A)
+        dZ = np.multiply(dA, derivative)
     if activation == "softmax":
-        derivative = softmax_derivative(Z, A)
+        derivative = softmax_derivative(Z, y, A)
     if activation == "relu":
         derivative = relu_derivative(Z, A)
-    dZ = np.multiply(dA, derivative)
+        dZ = np.multiply(dA, derivative)
 
     return dZ
 
@@ -468,10 +474,18 @@ class NN:
             # backpropagation
 
             ##### Alex note: need to check why we do below line of code
-            self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
+            # self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
+            # self.dZ[self.layer] = backprop_activate(
+            #     self.dA[self.layer],
+            #     self.Z[self.layer],
+            #     self.y_train,
+            #     self.activation[self.layer],
+            #     self.A[self.layer],
+            # )
+
             for l in reversed(range(1, self.layer + 1)):
                 self.dZ[l] = backprop_activate(
-                    self.dA[l], self.Z[l], self.activation[l], self.A[l]
+                    self.dA[l], self.Z[l], self.y_train, self.activation[l], self.A[l]
                 )
                 self.dA[l - 1], self.dW[l], self.db[l] = backprop_linear(
                     self.dZ[l],
