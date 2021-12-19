@@ -64,6 +64,9 @@ def sigmoid_derivative(Z, A=None):
 #%% softmax
 def softmax(Z):
     """
+    'Stable' softmax. Shifts row of Z so that exponentials are all of -ve
+    values. This prevents an error where large Z values overload np.exp().
+    see https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
 
     Parameters
     ----------
@@ -74,18 +77,9 @@ def softmax(Z):
     A: softmax values of shape (no of nodes or classes, no of samples)
 
     """
-    eZ = np.exp(Z)
-    sum_eZ = np.sum(eZ, axis=0)  # this gives shape of (1, m)
-    A = np.divide(eZ, sum_eZ)  # matrix broadcasting
-
-    ##### AGC edit: Check that we don't want to do the below:
-    # alternative way of writing this to produce more stable output is:
-    # shiftx = x - np.max(x)
-    # exps = np.exp(shiftx)
-    # return exps / np.sum(exps)
-    # also from https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
-
-    return A
+    shiftZ = Z - Z.max(axis=0)
+    exps = np.exp(shiftZ)
+    return exps / np.sum(exps, axis=0)
 
 
 #%% softmax_derivative
@@ -471,6 +465,7 @@ class NN:
 
             # backpropagation
 
+            ##### Alex note: need to check why we do below line of code
             self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
             for l in reversed(range(1, self.layer + 1)):
                 self.dZ[l] = backprop_activate(
