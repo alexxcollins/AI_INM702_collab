@@ -490,6 +490,7 @@ class NN:
             if visible:
                 print("epoch " + str(e))
 
+    #%% predict
     def predict(self, X_enquiry):
         """
         Predict the target values
@@ -506,8 +507,9 @@ class NN:
         """
         # initialize "activation" of layer 0
         self.A[0] = np.transpose(X_enquiry)
+
         # forward propagation
-        for l in range(1, self.layer):
+        for l in range(1, self.layer + 1):
             self.Z[l] = forward_linear(self.W[l], self.A[l - 1], self.b[l])
             self.A[l] = forward_activate(self.Z[l], self.activation[l])
 
