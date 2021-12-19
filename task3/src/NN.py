@@ -169,7 +169,7 @@ def init_parameter(n_current, n_prev, scale):
     #### Alex commenet: do we need to make this reproduceable with random seed?
     #### Alex comment - why not use np.random.default_rng() - it is preferred approach.
     W = np.random.normal(size=(n_current, n_prev)) * scale
-    b = np.zeros((n_current, 1))
+    b = np.ones((n_current, 1))
 
     return W, b
 
@@ -488,12 +488,13 @@ class NN:
                 )
 
             if visible:
-                print("epoch " + str(e))
+                print("epoch {}. Cost is {}".format(e, self.J[e]))
+                print("last weight matrix is:\n{}".format(self.W[self.layer]))
 
     #%% predict
     def predict(self, X_enquiry):
         """
-        Predict the target values
+        Predict the target values. Returns a one-hot encoded array.
 
         Parameters
         ----------
