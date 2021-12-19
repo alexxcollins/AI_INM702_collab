@@ -28,7 +28,7 @@ As L2 regularization treats weight and bias separately, we will use "separate"-s
 
 """
 
-
+#%% sigmoid
 def sigmoid(Z):
     """
     Parameters
@@ -43,6 +43,7 @@ def sigmoid(Z):
     return A
 
 
+#%% sigmoid_derivative
 def sigmoid_derivative(Z, A=None):
     """
     Parameters
@@ -163,7 +164,8 @@ def init_parameter(n_current, n_prev, scale):
     #### Alex commenet: do we need to make this reproduceable with random seed?
     #### Alex comment - why not use np.random.default_rng() - it is preferred approach.
     W = np.random.normal(size=(n_current, n_prev)) * scale
-    b = np.ones((n_current, 1))
+    b = np.random.normal(size=(n_current, 1))
+    print("top left weight value is  {}".format(W[0, 0]))
 
     return W, b
 
@@ -484,7 +486,11 @@ class NN:
 
             if visible:
                 print("epoch {}. Cost is {}".format(e, self.J[e]))
-                print("last weight matrix is:\n{}".format(self.W[self.layer]))
+                for i in range(1, self.layer + 1):
+                    print("weight matrix {} is:\n{}".format(i, self.W[i]))
+                    print(
+                        "derivative of weight matrix {} is:\n{}".format(i, self.dW[i])
+                    )
 
     #%% predict
     def predict(self, X_enquiry):
