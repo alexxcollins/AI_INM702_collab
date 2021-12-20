@@ -107,9 +107,8 @@ def softmax_derivative(Z, y, A=None):
     # where y is vector of one-hot encoded target values
     if A is None:
         derivative = softmax(Z) - y
-    #### Alex comment: think below should be derivative = A - y, but not sure how it's being used
-    # else:
-    #     derivative = A * (1 - A)
+    else:
+        derivative = A - y
     return derivative
 
 
@@ -248,7 +247,7 @@ def backprop_activate(dA, Z, y, activation, A):
         derivative = sigmoid_derivative(Z, A)
         dZ = np.multiply(dA, derivative)
     if activation == "softmax":
-        derivative = softmax_derivative(Z, y, A)
+        dZ = softmax_derivative(Z, y, A)
     if activation == "relu":
         derivative = relu_derivative(Z, A)
         dZ = np.multiply(dA, derivative)
@@ -473,16 +472,9 @@ class NN:
 
             # backpropagation
 
-            ##### Alex note: need to check why we do below line of code
-            # self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
-            # self.dZ[self.layer] = backprop_activate(
-            #     self.dA[self.layer],
-            #     self.Z[self.layer],
-            #     self.y_train,
-            #     self.activation[self.layer],
-            #     self.A[self.layer],
-            # )
-
+            # We don't use self.dA[self.layers] but need an input for it in loop
+            # below, so just set self.dA[self.layer] = None
+            self.dA[self.layer] = None
             for l in reversed(range(1, self.layer + 1)):
                 self.dZ[l] = backprop_activate(
                     self.dA[l], self.Z[l], self.y_train, self.activation[l], self.A[l]
