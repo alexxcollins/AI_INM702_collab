@@ -168,7 +168,8 @@ def init_parameter(n_current, n_prev, scale):
     #### Alex commenet: do we need to make this reproduceable with random seed?
     #### Alex comment - why not use np.random.default_rng() - it is preferred approach.
     W = np.random.normal(size=(n_current, n_prev)) * scale
-    b = np.random.normal(size=(n_current, 1))
+    # b = np.random.normal(size=(n_current, 1)) * scale
+    b = np.zeros(shape=(n_current, 1))
     print("top left weight value is  {}".format(W[0, 0]))
 
     return W, b
