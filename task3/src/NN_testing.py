@@ -59,7 +59,7 @@ test_model.add(10, 'softmax')
 
 print(test_model.layer)
 print(y_test)
-test_model.hyper(0.1, epochs=100, weight_scale='Xavier')
+test_model.hyper(0.1, epochs=50, weight_scale='Xavier', regularization_lambda = 0.1)
 
 test_model.fit(X_train, y_train, visible=True)
 print('predict: '+str(test_model.predict(X_test)))
