@@ -12,14 +12,19 @@ import numpy as np
 
 
 class NN:
-    def __init__(self, learning_rate=0.001, random_seed=42):
+    def __init__(
+        self, learning_rate=0.001, regularization=None, reg_alpha=None, random_seed=42
+    ):
         self.lr = learning_rate
+        self.regularization = regularization
+        self.reg_alpha = reg_alpha
         self.layers = 0
         self.activations = []
         self.nodes = [None]  # List of node sizes. First entry will hold number
         # of features when fit called
         self.rng = np.random.default_rng(random_seed)
         self.L = []  # empty list to store loss function output for epochs
+        self.Lreg = []  # empty list to store loss function with regularization term
 
         # create empty dictionary for W, b, Z, A
         self.W = {}  # weight of nodes
@@ -84,7 +89,9 @@ class NN:
             self.fwd_pass(X=self.X_train)
 
             # store loss function output
-            self.L.append(self.xe_loss(X=self.A[self.layers], y=self.y))
+            xe_loss, xe_loss_reg = self.xe_loss(X=self.A[self.layers], y=self.y)
+            self.L.append(xe_loss)
+            self.Lreg.append(xe_loss_reg)
 
             # back propogation. Calculate last layer first and then iterate
             l = self.layers - 1
@@ -244,6 +251,46 @@ class NN:
         """
         Calculate cross entropy loss.
         Normalises by batch size.
+
+        If L1 or L2 regularization is used, we return two values: it is helpful
+        to keep track of loss without regularization to compare betweed models
+        with different regularization or different parameters.
         """
         epsilon = 0.0000000001
-        return -(y * np.log(X + epsilon)).sum() / self.batch_size
+        if self.regularization is None:
+            loss_reg = 0
+        else:
+            # add terms for weights in each layer
+            for i in range(self.layers):
+                loss_reg = 0
+                loss_reg += 0.5 * (self.W[i] ** 2).sum() / self.batch_size
+        xel = -(y * np.log(X + epsilon)).sum() / self.batch_size
+        return xel, xel + loss_reg
+
+    def dZ(self, l):
+        """
+        This returns dZ/dA in the general case, but for the final layer returns
+        dL/dA where L is the loss function
+
+        l is an integer representing layer
+        """
+        if layer == self.layers:
+            return self.softmax(X=self.A[self.layers], gradient=True)
+        else:
+            dZ = (
+                self.activate(self.activations[l], X=self.Z[l], gradient=True)
+                * self.dA[l + 1]
+            )
+            return dZ
+
+    def dW(self, l):
+        """Returns dW_l/dZ_l"""
+        return (self.A[l].T @ self.dZ[l]) / self.batch_size
+
+    def db(self, l):
+        """Returns db_l/dZ_l"""
+        return self.dZ[l].sum(axis=0, keepdims=True) / self.batch_size
+
+    def dA(self, l):
+        """Returns dA_l/dZ_l"""
+        return self.dZ[l] @ self.W[l].T
