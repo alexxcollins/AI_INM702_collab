@@ -80,7 +80,7 @@ def softmax(Z):
     """
     shiftZ = Z - Z.max(axis=0)
     exps = np.exp(shiftZ)
-    return exps / np.sum(exps, axis=0)
+    return exps / np.sum(exps, axis=1)
 
 
 #%% softmax_derivative
@@ -192,7 +192,6 @@ def forward_linear(W, X, b):
     Z: linear combination of weight and previous activated output plus bias, shape (size of current layer, no of samples)
 
     """
-    ##### Alex comment - why isn't bias multiplied by weight? See slide 55 in lecture 7 for eg
     Z = np.matmul(W, X) + b
 
     return Z
@@ -222,9 +221,6 @@ def forward_activate(Z, activation):
         A = softmax(Z)
 
     return A
-
-    ##### proposed change:
-    return activation(Z)
 
 
 #%% backprop_activate
