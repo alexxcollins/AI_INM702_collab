@@ -302,6 +302,7 @@ def cost_function(A_final, y_true, W, m, regularization_lambda, activation_final
     ----------
     A_final : activation values of final layer
     y_true : target value for training
+    W: dictionary of Weight
     m : no of samples
     regularization_lambda : lambda of L2 regularization method
     activation_final: type of activation of final layer
@@ -309,10 +310,13 @@ def cost_function(A_final, y_true, W, m, regularization_lambda, activation_final
     -------
     J : cost reflecting the prediction error
     """
-
- 
+    s=0
+    for i in W.keys():
+       s += np.sum(W[i]**2) 
+    r = 0.5 * regularization_lambda * s / m
+    
     small = 0.0000000001 #avoid log zero
-    r = 0.5 * regularization_lambda * np.sum(W ** 2) / m
+    
     if activation_final is None:
         J = 0.5* np.sum((A_final - y_true)**2)/m + r
     else:
@@ -323,6 +327,7 @@ def cost_function(A_final, y_true, W, m, regularization_lambda, activation_final
 
 def mask(shape, dropout):
     pass
+
 
 
 #%% class NN
@@ -447,7 +452,7 @@ class NN:
                 cost_function(
                     self.A[self.layer],
                     self.y_train,
-                    self.W[self.layer],
+                    self.W,
                     self.m,
                     self.regularization_lambda,
                     self.activation[self.layer]
