@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Dec 11 16:14:54 2021
-
 @author: suenchihang
 """
 
 """
-
 """
 
 import numpy as np
@@ -25,7 +23,6 @@ As L2 regularization treats weight and bias separately, we will use "separate"-s
     n: no of nodes of a particular layer
     m: no of samples
     l: layer number
-
 """
 
 #%% sigmoid
@@ -34,7 +31,6 @@ def sigmoid(Z):
     Parameters
     ----------
     Z: scalar or array-like
-
     Returns
     -------
     A: sigmoid value to each element of Z, same shape as Z
@@ -50,7 +46,6 @@ def sigmoid_derivative(Z, A=None):
     ----------
     Z: scalar or array-like
     A: activation on Z, same shape as Z
-
     Returns
     -------
     derivative: compute derivative element-vise to Z
@@ -68,15 +63,12 @@ def softmax(Z):
     'Stable' softmax. Shifts row of Z so that exponentials are all of -ve
     values. This prevents an error where large Z values overload np.exp().
     see https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
-
     Parameters
     ----------
     Z : array of shape (no of nodes or classes, no of samples)
-
     Returns
     -------
     A: softmax values of shape (no of nodes or classes, no of samples)
-
     """
     shiftZ = Z - Z.max(axis=0)
     exps = np.exp(shiftZ)
@@ -90,7 +82,6 @@ def softmax_derivative(Z, A=None):
     ----------
     Z : array of shape (no of nodes or classes, no of samples)
     A: activation on Z, same shape as Z
-
     Returns
     -------
     derivative: compute derivative element-vise to Z
@@ -112,15 +103,12 @@ def softmax_derivative(Z, A=None):
 def relu(Z):
     """
     return relu activation output
-
     Parameters
     ----------
     Z : scalar or array (like?)
-
     Returns
     -------
     A: relu of same size as Z
-
     """
     return np.where(Z > 0, Z, 0)
 
@@ -132,7 +120,6 @@ def relu_derivative(Z, A=None):
     Z : array of shape (no of nodes or classes, no of samples)
     ####### Alex comment: I'm not quite sure how to deal with A yet
     A: activation on Z, same shape as Z
-
     Returns
     -------
     derivative: compute derivative element-vise to Z
@@ -144,18 +131,15 @@ def relu_derivative(Z, A=None):
 def init_parameter(n_current, n_prev, scale):
     """
     To initialize weight and bias parameter
-
     Parameters
     ----------
     n_current : no of nodes of current layer
     n_prev : no of nodeds of previous layer
     scale: scale to multiply to uniform random variable, or method of initialization
-
     Returns
     -------
     W: weight of node connection, shape(size of current layer, size of previous layer)
     b: bias for current layer
-
     """
     if scale == "Xavier":  # Xavier initialization
         scale = (1 / n_prev) ** 0.5
@@ -165,8 +149,8 @@ def init_parameter(n_current, n_prev, scale):
     #### Alex commenet: do we need to make this reproduceable with random seed?
     #### Alex comment - why not use np.random.default_rng() - it is preferred approach.
     W = np.random.normal(size=(n_current, n_prev)) * scale
-    b = np.random.normal(size=(n_current, 1))
-    print("top left weight value is  {}".format(W[0, 0]))
+    b = np.zeros((n_current, 1))
+    
 
     return W, b
 
@@ -174,19 +158,15 @@ def init_parameter(n_current, n_prev, scale):
 #%% forward_linear
 def forward_linear(W, X, b):
     """
-
-
     Parameters
     ----------
     W : 2-D array of shape (size of current layer, size of previous layer), Weight of nodes
     X : 2-D array, input data or activations from previous layer of shape (size of previous layer, no of samples)
     ##### Alex comment - should bias be (no of samples, 1) ?
     b : bias, of array shape (size of current layer, 1)
-
     Returns
     -------
     Z: linear combination of weight and previous activated output plus bias, shape (size of current layer, no of samples)
-
     """
     ##### Alex comment - why isn't bias multiplied by weight? See slide 55 in lecture 7 for eg
     Z = np.matmul(W, X) + b
@@ -197,77 +177,95 @@ def forward_linear(W, X, b):
 #%% forward_activate
 def forward_activate(Z, activation):
     """
-
     Parameters
     ----------
     Z : array-like shape of (no of nodes, no of samples), pre-activation
     activation: type of activation
     ##### proposed change:
     activation: function, activation function to use
-
     Returns
     -------
     A: activation values corresponding to each element of Z
-
     """
     if activation == "sigmoid":
         A = sigmoid(Z)
-    if activation == "relu":
+    elif activation == "relu":
         A = relu(Z)
-    if activation == "softmax":
+    elif activation == "softmax":
         A = softmax(Z)
+    elif activation is None:
+        A = Z
 
     return A
 
     ##### proposed change:
-    return activation(Z)
+    #####return activation(Z)
 
 
 #%% backprop_activate
 def backprop_activate(dA, Z, activation, A):
     """
-
     Parameters
     ----------
     dA: gradient of A, same shape as A
     Z : array-like shape of (no of nodes, no of samples), pre-activation
     activation: type of activation
     A: activation values corresponding to each element of Z, same shape as Z
+    Returns
+    -------
+    dZ: gradient of Z, same shape as Z
+    """
+    ##### Alex comment - making function as object should make this faster too
+    if activation == "sigmoid":
+        derivative = sigmoid_derivative(Z, A)
+    elif activation == "relu":
+        derivative = relu_derivative(Z, A)
+    elif activation == "softmax":
+        derivative = softmax_derivative(Z, A)
+    elif activation is None:
+        derivative = 1
+        
+    dZ = np.multiply(dA, derivative)
+
+    return dZ
+
+
+def dZ_final_layer(y, A, activation):
+    """
+    
+
+    Parameters
+    ----------
+    y : actual targte values, shape (1, no of samples)
+    A : activation values of final layer corresponding to each element of Z, same shape as Z
+    Aativation: type of activation
 
     Returns
     -------
     dZ: gradient of Z, same shape as Z
 
     """
-    ##### Alex comment - making function as object should make this faster too
-    if activation == "sigmoid":
-        derivative = sigmoid_derivative(Z, A)
-    if activation == "softmax":
-        derivative = softmax_derivative(Z, A)
-    if activation == "relu":
-        derivative = relu_derivative(Z, A)
-    dZ = np.multiply(dA, derivative)
-
+    if activation == "sigmoid" or activation == "softmax":
+        dZ = A - y
+    elif activation is None:   
+        dZ = A - y    #turn out the formula is the same, code not simplified for the purpose of internal communication
+    
     return dZ
-
 
 #%% backprop_linear
 def backprop_linear(dZ, W, A_prev, regularization_lambda, m):
     """
-
     Parameters
     ----------
     dZ : gradient of Z, shape same as Z
     W : weight of current layer, shape (size of current layer, size of previous layer)
     A_prev : gradient of A of previous layer
     regularization_lambda : lamda of L2 regularization
-
     Returns
     -------
     dA_prev : gradient of A of previous layer
     dW : gradient of W
     db : gradient of b
-
     """
     # formula reference/cross check:  Summary of gradient descent, Andrew Ng
     dA_prev = np.matmul(np.transpose(W), dZ)
@@ -279,8 +277,6 @@ def backprop_linear(dZ, W, A_prev, regularization_lambda, m):
 #%% update_parameter
 def update_parameter(W, b, dW, db, learning_rate):
     """
-
-
     Parameters
     ----------
     W : Weight, shape of (size of current layer, size of previous layer)
@@ -288,12 +284,10 @@ def update_parameter(W, b, dW, db, learning_rate):
     dW : gradient of W, same shape as W
     db : gradient of b, same shape of b
     learning_rate : learning rate applied to gradient for updating parameter
-
     Returns
     -------
     W : Weight, shape of (size of current layer, size of previous layer)
     b : bias, shape of (size of current layer, 1)
-
     """
     W = W - dW * learning_rate
     b = b - db * learning_rate
@@ -301,26 +295,28 @@ def update_parameter(W, b, dW, db, learning_rate):
 
 
 #%% cost_function
-def cost_function(prob_predict, y_true, W, m, regularization_lambda):
+def cost_function(A_final, y_true, W, m, regularization_lambda, activation_final):
     """
     Calculate cross entropy loss
-
     Parameters
     ----------
-    prob_predict : predicted probability
+    A_final : activation values of final layer
     y_true : target value for training
     m : no of samples
     regularization_lambda : lambda of L2 regularization method
-
+    activation_final: type of activation of final layer
     Returns
     -------
     J : cost reflecting the prediction error
-
     """
 
-    ### why do we divide by m?
+ 
+    small = 0.0000000001 #avoid log zero
     r = 0.5 * regularization_lambda * np.sum(W ** 2) / m
-    J = -np.sum(np.multiply(y_true, np.log(prob_predict))) / m + r
+    if activation_final is None:
+        J = 0.5* np.sum((A_final - y_true)**2)/m + r
+    else:
+        J = -np.sum(np.multiply(y_true, np.log(A_final + small))) / m + r
 
     return J
 
@@ -334,7 +330,6 @@ class NN:
     def __init__(self, input_dim, dropout=0):
         """
         initialize neural network
-
         Parameters
         ----------
         input_dim: dimension of input for the neural network
@@ -361,16 +356,14 @@ class NN:
         self.dA = {}
 
     #%% add layer
-    def add(self, N, activation="sigmoid", dropout=0):
+    def add(self, N, activation=None, dropout=0):
         """
         adding one layer to neural network
-
         Parameters
         ----------
         N: no of nodes of the layer
         activation: type of activation of the layer
         dropout: dropout ratio of the layer, from 0 to 1
-
         """
         self.layer += 1
         self.N.append(N)
@@ -392,7 +385,6 @@ class NN:
     ):
         """
         Setting hyper-parameters of neural network
-
         Parameters
         ----------
         learning_rate: learning rate for updating weight by gradient
@@ -402,7 +394,6 @@ class NN:
         batch_size: batch size for training
         weight_scale: the scale used for initializing weight, multiplied to standard normal random variable
         seed: random seed for training
-
         """
         self.learning_rate = learning_rate
         self.optimizer = optimizer
@@ -413,32 +404,28 @@ class NN:
         self.seed = seed
 
     #%% fit
-    def fit(self, X_train, y_train, visible=False):
+    def fit(self, X_train, y_train, visible=False, history=False):
         """
         Training the neural network given the training data
-
         Parameters
         ----------
         X_train : data input of shape (no of samples, no of features)
             Note: transpose to shape (no of features, no of samples) as self.X_train for internal training
         y_train : target value of shape (no of samples, no of classes)
             Note: transpose to shape (no of classes, no of samples) as self.y_train for internal training
-
         Returns
         -------
         None.
-
         """
         self.X_train = np.transpose(X_train)
         self.y_train = np.transpose(y_train)
         self.J = []
-        self.m = len(self.y_train)  # get no of samples
+        self.m = np.shape(X_train)[0]  # get no of samples
         self.m_mini = self.batch_size  # Alex to work on mini batch or other optimizers
-
+        self.history={}
         # initialize weight and bias
         np.random.seed(self.seed)
         for l in range(1, self.layer + 1):
-            #### Alex comment: at the moment biases are all initialised to zeros.
             self.W[l], self.b[l] = init_parameter(
                 n_current=self.N[l], n_prev=self.N[l - 1], scale=self.weight_scale
             )
@@ -463,17 +450,19 @@ class NN:
                     self.W[self.layer],
                     self.m,
                     self.regularization_lambda,
+                    self.activation[self.layer]
                 )
             )
 
             # backpropagation
 
-            ##### Alex note: need to check why we do below line of code
-            self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
+            ##### Alex note: need to check why we do below line of code   #HS: skip now
+            #self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
             for l in reversed(range(1, self.layer + 1)):
-                self.dZ[l] = backprop_activate(
-                    self.dA[l], self.Z[l], self.activation[l], self.A[l]
-                )
+                if l == self.layer:
+                    self.dZ[l] = dZ_final_layer(self.y_train, self.A[self.layer], self.activation[self.layer])
+                else:
+                    self.dZ[l] = backprop_activate(self.dA[l], self.Z[l], self.activation[l], self.A[l])
                 self.dA[l - 1], self.dW[l], self.db[l] = backprop_linear(
                     self.dZ[l],
                     self.W[l],
@@ -484,7 +473,10 @@ class NN:
                 self.W[l], self.b[l] = update_parameter(
                     self.W[l], self.b[l], self.dW[l], self.db[l], self.learning_rate
                 )
-
+            if history:
+                self.history[e] = {}
+                self.history[e]['dW'] = self.dW
+                self.history[e]['W']=self.W
             if visible:
                 print("epoch {}. Cost is {}".format(e, self.J[e]))
                 # for i in range(1, self.layer + 1):
@@ -492,21 +484,19 @@ class NN:
                 #     print(
                 #         "derivative of weight matrix {} is:\n{}".format(i, self.dW[i])
                 #     )
-
+ 
+    
     #%% predict
     def predict(self, X_enquiry):
         """
         Predict the target values. Returns a one-hot encoded array.
-
         Parameters
         ----------
         X_enquiry : data input of shape (no of samples, no of features)
             Note: transpose to shape (no of features, no of samples) for internal calculation
-
         Returns
         -------
         y_predict: array of shape (no of samples, no of classes)
-
         """
         # initialize "activation" of layer 0
         self.A[0] = np.transpose(X_enquiry)
@@ -515,21 +505,28 @@ class NN:
         for l in range(1, self.layer + 1):
             self.Z[l] = forward_linear(self.W[l], self.A[l - 1], self.b[l])
             self.A[l] = forward_activate(self.Z[l], self.activation[l])
-
+        
         a = np.transpose(self.A[self.layer])  # transpose predicted probability
-        y_predict = np.zeros_like(a)
-        y_predict[np.arange(len(a)), a.argmax(1)] = 1
+        
+        if self.activation[self.layer] is None:
+            y_predict = a
+        else:
+            y_predict = np.zeros_like(a)
+            y_predict[np.arange(len(a)), a.argmax(1)] = 1
 
         return y_predict
 
     def evaluate(self, X_test, y_test):
-        self.A[l] = forward_activate(self.Z[l], self.activation[l])
-
-        a = np.transpose(self.A[self.layer])  # transpose predicted probability
-        y_predict = np.zeros_like(a)
-        y_predict[np.arange(len(a)), a.argmax(1)] = 1
-
-        return y_predict
-
-    def evaluate(self, X_test, y_test):
-        pass
+        y_predict = self.predict(X_test)
+        residual = y_predict - y_test
+        metrics = {}
+        if self.activation[self.layer] is None:
+            metrics['R2'] = 1 - (np.sum(residual**2)/len(residual))/np.var(y_test)
+        else: 
+            if self.activation[self.layer] =='softmax':  #assume classes are exclusive, either softmax or sigmoid for final layer activation
+                adjust = 0.5
+            else:
+                adjust = 1
+            metrics['accuracy'] = 1 - adjust * np.sum(np.absolute(residual))/np.shape(residual)[0]
+        print(metrics)
+        return metrics
