@@ -108,6 +108,7 @@ def softmax_derivative(Z, A=None):
     return derivative
 
 
+#%% relu
 def relu(Z):
     """
     return relu activation output
@@ -485,7 +486,7 @@ class NN:
                 )
 
             if visible:
-                # print("epoch {}. Cost is {}".format(e, self.J[e]))
+                print("epoch {}. Cost is {}".format(e, self.J[e]))
                 # for i in range(1, self.layer + 1):
                 #     print("weight matrix {} is:\n{}".format(i, self.W[i]))
                 #     print(
