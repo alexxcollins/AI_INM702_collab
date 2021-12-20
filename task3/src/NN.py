@@ -493,11 +493,11 @@ class NN:
 
             if visible:
                 print("epoch {}. Cost is {}".format(e, self.J[e]))
-                for i in range(1, self.layer + 1):
-                    print("weight matrix {} is:\n{}".format(i, self.W[i]))
-                    print(
-                        "derivative of weight matrix {} is:\n{}".format(i, self.dW[i])
-                    )
+                # for i in range(1, self.layer + 1):
+                #     print("weight matrix {} is:\n{}".format(i, self.W[i]))
+                #     print(
+                #         "derivative of weight matrix {} is:\n{}".format(i, self.dW[i])
+                #     )
 
     #%% predict
     def predict(self, X_enquiry):
