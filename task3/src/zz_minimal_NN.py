@@ -53,9 +53,11 @@ class NN:
         self.nodes.append(nodes)
         self.activations.append(activation)
 
-    def model(self, X_train, y_train, verbose=True):
+    def model(self, X_train, y_train, X_test=None, y_test=None, verbose=True):
         self.X_train = X_train
         self.y_train = y_train
+        self.X_test = X_test
+        self.y_test = y_test
         self.no_samples = y_train.shape[0]
         self.nodes[0] = X_train.shape[1]
         self.batch_size = self.no_samples  # not actively setting this yet - maybe
@@ -79,12 +81,7 @@ class NN:
         self.y = self.y_train
         for e in range(epochs):
             # forward propagation
-            self.A[0] = self.X_train
-            for l in range(self.layers):
-                self.Z[l] = self.A[l] @ self.W[l] + self.b[l]
-                self.A[l + 1] = self.activate(
-                    self.activations[l], X=self.Z[l], gradient=False
-                )
+            self.fwd_pass(X=self.X_train)
 
             # store loss function output
             self.L.append(self.xe_loss(X=self.A[self.layers], y=self.y))
@@ -92,8 +89,8 @@ class NN:
             # back propogation. Calculate last layer first and then iterate
             l = self.layers - 1
             self.dZ[l] = self.softmax(X=self.A[self.layers], gradient=True)
-            self.dW[l] = self.A[l].T @ self.dZ[l]  # / self.batch_size
-            self.db[l] = self.dZ[l].sum(axis=0, keepdims=True)  # / self.batch_size
+            self.dW[l] = self.A[l].T @ self.dZ[l] / self.batch_size
+            self.db[l] = self.dZ[l].sum(axis=0, keepdims=True) / self.batch_size
             self.dA[l] = self.dZ[l] @ self.W[l].T
             for l in reversed(range(self.layers - 1)):
                 self.dZ[l] = (
@@ -106,25 +103,49 @@ class NN:
 
             # update weights and biases
             self.update_params()
-            _ = self.predict()
-            accuracy = self.accuracy(self.y_train)
+
+            # print training information
+            train_pred = self.predict(self.X_train)
+            train_accuracy = self.accuracy(train_pred, self.y_train)
+
+            if self.X_test is not None:
+                test_pred = self.predict(self.X_test)
+                test_accuracy = self.accuracy(test_pred, self.y_test)
 
             if verbose:
                 print(
-                    "epoch {}. loss: {:.3f}, accuracy: {:.3f}".format(
-                        e, self.L[e], accuracy
+                    "epoch {} loss: {:.3f}; train accy: {:.3f}; test accy: {:.3f}".format(
+                        e, self.L[e], train_accuracy, test_accuracy
                     )
                 )
 
-    def predict(self):
-        ## this needs totally changing. Needs to take y_test as input
-        self.y_pred = np.argmax(self.A[self.layers], axis=1)
-        return self.y_pred
+    def fwd_pass(self, X, train=True):
 
-    def accuracy(self, y_true, one_hot=True):
+        if train:
+            self.A[0] = X
+            for l in range(self.layers):
+                self.Z[l] = self.A[l] @ self.W[l] + self.b[l]
+                self.A[l + 1] = self.activate(
+                    self.activations[l], X=self.Z[l], gradient=False
+                )
+        else:
+            Z = {}
+            A = {}
+            A[0] = X
+            for l in range(self.layers):
+                Z[l] = A[l] @ self.W[l] + self.b[l]
+                A[l + 1] = self.activate(self.activations[l], X=Z[l], gradient=False)
+            return A, Z
+
+    def predict(self, X):
+        """calculates predicted y from X"""
+        A, _ = self.fwd_pass(X, train=False)
+        return np.argmax(A[self.layers], axis=1)
+
+    def accuracy(self, y_pred, y_true, one_hot=True):
         if one_hot:
             y_true = np.argmax(y_true, axis=1)
-        return np.where(y_true == self.y_pred, True, False).sum() / y_true.size
+        return np.where(y_true == y_pred, True, False).sum() / y_true.size
 
     def init_params(self, scale="He"):
         """
@@ -179,6 +200,25 @@ class NN:
             return np.where(X > 0, 1, 0)
         else:
             return np.where(X > 0, X, 0)
+
+    def sigmoid(self, X, gradient=False):
+        """
+        Sigmoid activation
+        Returns either forward pass value or gradient
+
+        Parameters
+        ----------
+        X : numpy array of shape (nodes in current layer, 1)
+
+        Returns
+        -------
+        Transformed array, A, of same shape as Z
+
+        """
+        if gradient:
+            return 1 / (1 + np.exp(-X))
+        else:
+            return X * (1 - X)
 
     def softmax(self, X, gradient=False):
         """
