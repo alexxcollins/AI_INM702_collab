@@ -342,9 +342,8 @@ class NN:
         """
         self.input_dim = input_dim
         self.layer = 0  # current number of layers
-        self.N = [
-            input_dim
-        ]  # list of no of nodes for each layer, with self.N[0] set as input_dim
+        # list of no of nodes for each layer, with self.N[0] set as input_dim
+        self.N = [input_dim]
         self.activation = ["na"]  # list of activation type for each layer
         self.dropout = [dropout]  # list of dropout ratio for each layer
 
@@ -377,7 +376,7 @@ class NN:
         self.dropout.append(dropout)
 
     #%% set hyper parameters
-    # Alex comment: why here and not in __init__??
+
     def hyper(
         self,
         learning_rate=0.01,
@@ -461,8 +460,6 @@ class NN:
 
             # backpropagation
 
-            ##### Alex note: need to check why we do below line of code   #HS: skip now
-            #self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
             for l in reversed(range(1, self.layer + 1)):
                 if l == self.layer:
                     self.dZ[l] = dZ_final_layer(self.y_train, self.A[self.layer], self.activation[self.layer])
@@ -482,6 +479,8 @@ class NN:
                 self.history[e] = {}
                 self.history[e]['dW'] = self.dW
                 self.history[e]['W']=self.W
+                self.history[e]['db'] = self.db
+                self.history[e]['b']=self.b
             if visible:
                 print("epoch {}. Cost is {}".format(e, self.J[e]))
                 # for i in range(1, self.layer + 1):
