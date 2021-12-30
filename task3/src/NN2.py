@@ -14,11 +14,56 @@ import matplotlib.pyplot as plt
 
 class NN:
     def __init__(
-        self, learning_rate=0.001, regularization=None, reg_alpha=None, random_seed=42
+        self, learning_rate=0.01, regularization=None, reg_alpha=None, random_seed=42
     ):
         """Intialiase NN class. Set learning rate.
-        regularization is None or string. Currenlty L2 and L2 allowed
+        regularization is None or string. Currenlty "L1" and "L2" allowed
         reg_alpha is float in (0,1)
+        random_seed sets random seed for object methods.
+
+        Example of setting up a neural network:
+
+        To run a neural net first intialise
+               model = NN(learning_rate=0.2, random_seed=42)
+
+        Then add layers to the model. For categorisatoin, last layer will need
+        nodes = number of classes, and activation=NN.softmax.
+        See .add() method for more details.
+               model.add(nodes = 512, activation=NN.ReLu)
+               model.add(nodes = 10, activation=NN.softmax)
+
+        Then initialise the model with training and optional test data:
+               model.model(X_train, y_train, X_test, y_test, minibatch_size=32)
+        If verbose=True (the default value) then .model() will print a summary
+        of the model with output for each layer of nodes, size of weights and
+        biases parameters etc.
+
+            number of samples = 60000
+            training data has 784 features
+            learning rate = 0.25
+            regularization is None with parameter None
+            minibatch size is 32
+
+            hidden layer 0:
+            nodes in previous layer: 784
+            nodes in this layer: 1024
+            weight shape: (784, 1024)
+            bias shape: (1, 1024)
+            activation function is <function NN.ReLu at 0x12ff843a0>
+
+            hidden layer 1:
+            nodes in previous layer: 1024
+            nodes in this layer: 10
+            weight shape: (1024, 10)
+            bias shape: (1, 10)
+            activation function is <function NN.softmax at 0x12ff844c0>
+
+        Then fit the model. Set the maximum number of epochs, stopping criteria
+        and whether you want verbose output or not.
+              model.fit(epochs=15, min_epochs=2, patience=2,
+                        stopping_metric="valid", verbose=True)
+
+        To plot history of loss per minibatch, run model.plot_error()
         """
         self.lr = learning_rate
         self.regularization = regularization
@@ -43,7 +88,10 @@ class NN:
 
     def add(self, nodes, activation):
         """
-        Add dense layer with specified number of nodes
+        Add dense layer with specified number of nodes.
+
+        If adding the final layer, need to use activation = NN.softmax and
+        nodes equal to number of classes to classify.
 
         Parameters
         ----------
@@ -68,6 +116,7 @@ class NN:
         X_test=None,
         y_test=None,
         minibatch_size=None,
+        scale="He",
         verbose=True,
     ):
         """
@@ -86,10 +135,13 @@ class NN:
         y_test : np array, shape (number of samples, number of classes)
             one-hot encoded labels for test data
         minibatch_size : integer or None, optional
-            If None then batch SGD is done (i.e. all samples used for each
+            If None then batch-SGD is done (i.e. all samples used for each
             epoch). If set to one then SGD used with weights reset after cost
             and gradients calculated for each sample.)
             Minibatches are randomly sampled at each epoch.
+        scale : string. Either 'He' or 'Xavier'.
+            Method to initialize weights. He is better for ReLu and 'Xavier'
+            for Sigmoid.
         verbose : Bool, optional
             If True then prints out model arhitecture. The default is True.
 
@@ -114,7 +166,7 @@ class NN:
                 int
             )
 
-        self.init_params()
+        self.init_params(scale=scale)
         if verbose:
             print("number of samples = {}".format(self.no_samples))
             print("training data has {} features".format(self.nodes[0]))
@@ -143,14 +195,19 @@ class NN:
         self.Lreg = (
             []
         )  # empty list to store loss function with regularization term within epoch
+
         # create an empty array to store losses. Each row will hold losses for one
-        # epoch. Initialise "empty" array of appropriate size and append rows each epoch
+        # epoch. Initialise "empty" array of appropriate size and append rows for each epoch
         self.L_ar = np.array([]).reshape(0, self.num_batches)
         self.Lreg_ar = np.array([]).reshape(0, self.num_batches)
+        # create empty array for keeping track of training loss after each epoch
+        # self.L_train = np.array([]).reshape(0, 1)
         # create empty array for keeping track of validation loss after each epoch
         self.L_valid = np.array([]).reshape(0, 1)
         # set self.y for softmax activation function to take as input
         self.y = self.y_train
+
+        # loop through all epochs (unless stopping criteria are met)
         for e in range(epochs):
             # shuffle the data to ensure different minibatches are returned
             # for each epoch.
@@ -174,7 +231,10 @@ class NN:
 
                 # store loss function output
                 xe_loss, xe_loss_reg = self.xe_loss(X=self.A[self.layers], y=y, m=m)
+                # Loss without regularisation term - so models with different regularization
+                # params can be compared
                 self.L.append(xe_loss)
+                # Loss with regularization term
                 self.Lreg.append(xe_loss_reg)
 
                 # back propogation.
@@ -196,20 +256,27 @@ class NN:
             self.L = []
             self.Lreg = []
 
-            # update validation loss for epoch
-            A, _ = self.fwd_pass(self.X_test, train=False)
-            L, _ = self.xe_loss(X=A[self.layers], y=self.y_test, m=self.y_test.shape[0])
-            self.L_valid = np.concatenate((self.L_valid, np.array(L).reshape(1, 1)))
-
-            # print training information
+            # prepare to print training information
             train_pred = self.predict(self.X_train)
             train_accuracy = self.accuracy(train_pred, self.y_train)
 
             if self.X_test is not None:
                 test_pred = self.predict(self.X_test)
                 test_accuracy = self.accuracy(test_pred, self.y_test)
+                # update validation loss for epoch
+                A, _ = self.fwd_pass(self.X_test, train=False)
+                test_loss, _ = self.xe_loss(
+                    X=A[self.layers], y=self.y_test, m=self.y_test.shape[0]
+                )
+                self.L_valid = np.concatenate(
+                    (self.L_valid, np.array(test_loss).reshape(1, 1))
+                )
+            else:
+                test_accuracy = 0.0
+                test_loss = 0.0
 
             if verbose:
+                # calculate mean loss across all minibatches in epoch.
                 avg_loss = self.L_ar[-1, :].mean()
                 print(
                     "epoch {} average loss: {:.3f}; train accy: {:.3f}; test accy: {:.3f}; test loss: {:.3f}".format(
@@ -217,6 +284,7 @@ class NN:
                     )
                 )
 
+            # early stopping test
             if self.stop(
                 e, self.L_ar, self.min_epochs, patience, metric=stopping_metric
             ):
@@ -241,9 +309,16 @@ class NN:
 
         Returns
         -------
-        A : np array. Shape (number of samples in batch, 10
-        Z : np array. Shape (number of samples in batch, 1)
+        If train is False:
+            A : np array. Shape (number of samples in batch, 10)
+            Z : np array. Shape (number of samples in batch, 1)
+        Otherwise returns nothing.
         """
+        # if fwd_pass done in training mode, update attributes corresponding
+        # to the Zs and As in layers.
+        # note that Z and A arrays are only stored for each epoch - so the same
+        # arrays will get over-written by each mini-batch loop. This would be
+        # somthing to fix in a future iteration of the code, but it works.
         if train:
             self.A[0] = X
             for l in range(self.layers):
@@ -267,6 +342,27 @@ class NN:
         return np.argmax(A[self.layers], axis=1)
 
     def accuracy(self, y_pred, y_true, one_hot=True):
+        """
+        Calculate accuracy metric. [num correct predictions] / [sample size]
+
+        Parameters
+        ----------
+        y_pred : array. Size (number of samples, 1) or
+                        (number of samples, number of categories)
+            array of predictions. Either one-hot encoded, or an array of
+            intergers corresponding to categories
+        y_true : array. Same size as y_pred.
+            array of actual labels. Either one-hot encoded or array of
+            integers corresponding to categories
+        one_hot : Boolean optional
+            if y_pred and y_true are one-hot encoded then this should be set
+            to True; otherwise False. The default is True.
+
+        Returns
+        -------
+        float - [num correct predictions] / [sample size]
+
+        """
         if one_hot:
             y_true = np.argmax(y_true, axis=1)
         return np.where(y_true == y_pred, True, False).sum() / y_true.size
@@ -280,7 +376,12 @@ class NN:
         We want to ensure that at each stage, the array X@W + b is shape
         (no of samples, no of nodes)
 
-        Very naive setting of weight magnitudes to start with
+        Very naive setting of weight magnitudes to start with.
+
+        Parameters
+        ----------
+        scale : string. Either 'He' or 'Xavier'. He is better for ReLu and
+                'Xavier' for Sigmoid.
 
         Returns
         -------
@@ -297,12 +398,24 @@ class NN:
             self.b[i] = np.ones(shape=(1, self.nodes[i + 1])) * scale
 
     def update_params(self):
+        """
+        Update parameters after gradients have been calculted in back propogation
+        stage.
+
+        Returns
+        -------
+        None. Updates attributes containing weights. Uses gradients calculated
+        by back propogation.
+
+        """
         # for NN work with n layers, there are n weights indexed from 0 to n-1
         for i in range(self.layers):
             self.W[i] -= self.dW[i] * self.lr
             self.b[i] -= self.db[i] * self.lr
 
     def activate(self, activation, **kwargs):
+        # this function isn't really needed. Was created initially to wrap more
+        # complex functionality. In future iteration we could get rid of this.
         return activation(self, **kwargs)
 
     def ReLu(self, X, y=None, gradient=False):
@@ -312,11 +425,18 @@ class NN:
 
         Parameters
         ----------
-        X : numpy array of shape (nodes in current layer, 1)
+        X : numpy array of shape (no of samples in batch, nodes in current layer)
+        y : None
+            Not great design. Needs a named variable y so that activation
+            functions can be called in general way from loop. It works though.
+            Could be fixed in future design
+        gradient : Boolean
+            Set to True if want deritive returned, False if want forward pass
+            value returned
 
         Returns
         -------
-        Transformed array, A, of same shape as Z
+        Transformed array, A, of same shape as X
 
         """
         if gradient:
@@ -331,11 +451,18 @@ class NN:
 
         Parameters
         ----------
-        X : numpy array of shape (nodes in current layer, 1)
+        X : numpy array of shape (no of samples in batch, nodes in current layer)
+        y : None
+            Not great design. Needs a named variable y so that activation
+            functions can be called in general way from loop. It works though.
+            Could be fixed in future design
+        gradient : Boolean
+            Set to True if want deritive returned, False if want forward pass
+            value returned
 
         Returns
         -------
-        Transformed array, A, of same shape as Z
+        Transformed array, A, of same shape as X
 
         """
         if gradient:
@@ -349,7 +476,12 @@ class NN:
 
         Parameters
         ----------
-        X : numpy array of shape (nodes in current layer, 1)
+        X : numpy array of shape (no of samples in batch, nodes in current layer)
+        y : numpy array of shape (no of samples in batch, no of categories)
+        gradient : Boolean
+            Set to True if want deritive returned, False if want forward pass
+            value returned. The derivative in this case is the derivative of
+            the softmax and cross-entropy loss chained together.
 
         Returns
         -------
@@ -377,9 +509,15 @@ class NN:
         If L1 or L2 regularization is used, we return two values: it is helpful
         to keep track of loss without regularization to compare betweed models
         with different regularization or different parameters.
+
+        Returns
+        -------
+        tuple. (xe-loss without regularization loss, xe-loss with regularization loss)
+        The two values will be the same if no regularization is used.
         """
         epsilon = 0.0000000001
         if self.regularization == "L1":
+            # add terms for weights in each layer
             loss_reg = 0
             for i in range(self.layers):
                 loss_reg += (
@@ -402,6 +540,7 @@ class NN:
         dL/dA where L is the loss function
 
         l is an integer representing layer
+        y is one-hot encoded numpy array of size (number of samples, number of categories)
         """
         if l == self.layers - 1:
             return self.softmax(X=self.A[self.layers], y=y, gradient=True)
