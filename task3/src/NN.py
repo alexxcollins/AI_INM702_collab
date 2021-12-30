@@ -350,9 +350,8 @@ class NN:
         """
         self.input_dim = input_dim
         self.layer = 0  # current number of layers
-        self.N = [
-            input_dim
-        ]  # list of no of nodes for each layer, with self.N[0] set as input_dim
+        # list of no of nodes for each layer, with self.N[0] set as input_dim
+        self.N = [input_dim]
         self.activation = ["na"]  # list of activation type for each layer
         self.dropout = [dropout]  # list of dropout ratio for each layer
 
@@ -385,7 +384,7 @@ class NN:
         self.dropout.append(dropout)
 
     #%% set hyper parameters
-    # Alex comment: why here and not in __init__??
+
     def hyper(
         self,
         learning_rate=0.01,
