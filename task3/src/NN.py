@@ -72,15 +72,19 @@ def softmax(Z):
     """
     shiftZ = Z - Z.max(axis=0)
     exps = np.exp(shiftZ)
-    return exps / np.sum(exps, axis=0)
+    return exps / np.sum(exps, axis=1)
 
 
 #%% softmax_derivative
-def softmax_derivative(Z, A=None):
+def softmax_derivative(Z, y, A=None):
     """
+    softmax is only ever applied to the final layer - to get probabilities of
+    classes which sum to one.
+
     Parameters
     ----------
-    Z : array of shape (no of nodes or classes, no of samples)
+    Z : array of shape (no of classes, no of samples)
+    y : array of shape (no of classes, no of samples)
     A: activation on Z, same shape as Z
     Returns
     -------
@@ -93,9 +97,9 @@ def softmax_derivative(Z, A=None):
     #   derivative = softmax(Z) - y
     # where y is vector of one-hot encoded target values
     if A is None:
-        derivative = softmax(Z) * (1 - softmax(Z))
+        derivative = softmax(Z) - y
     else:
-        derivative = A * (1 - A)
+        derivative = A - y
     return derivative
 
 
@@ -149,8 +153,11 @@ def init_parameter(n_current, n_prev, scale):
     #### Alex commenet: do we need to make this reproduceable with random seed?
     #### Alex comment - why not use np.random.default_rng() - it is preferred approach.
     W = np.random.normal(size=(n_current, n_prev)) * scale
+
+    ## Note: if we have time we should check initialization for bias for different
+    ## hyper parameters. Is zero always bets?
+    # b = np.random.normal(size=(n_current, 1)) * scale
     b = np.zeros((n_current, 1))
-    
 
     return W, b
 
@@ -168,7 +175,6 @@ def forward_linear(W, X, b):
     -------
     Z: linear combination of weight and previous activated output plus bias, shape (size of current layer, no of samples)
     """
-    ##### Alex comment - why isn't bias multiplied by weight? See slide 55 in lecture 7 for eg
     Z = np.matmul(W, X) + b
 
     return Z
@@ -203,7 +209,7 @@ def forward_activate(Z, activation):
 
 
 #%% backprop_activate
-def backprop_activate(dA, Z, activation, A):
+def backprop_activate(dA, Z, y, activation, A):
     """
     Parameters
     ----------
@@ -224,7 +230,7 @@ def backprop_activate(dA, Z, activation, A):
         derivative = softmax_derivative(Z, A)
     elif activation is None:
         derivative = 1
-        
+
     dZ = np.multiply(dA, derivative)
 
     return dZ
@@ -232,7 +238,7 @@ def backprop_activate(dA, Z, activation, A):
 
 def dZ_final_layer(y, A, activation):
     """
-    
+
 
     Parameters
     ----------
@@ -247,10 +253,13 @@ def dZ_final_layer(y, A, activation):
     """
     if activation == "sigmoid" or activation == "softmax":
         dZ = A - y
-    elif activation is None:   
-        dZ = A - y    #turn out the formula is the same, code not simplified for the purpose of internal communication
-    
+    elif activation is None:
+        dZ = (
+            A - y
+        )  # turn out the formula is the same, code not simplified for the purpose of internal communication
+
     return dZ
+
 
 #%% backprop_linear
 def backprop_linear(dZ, W, A_prev, regularization_lambda, m):
@@ -310,15 +319,15 @@ def cost_function(A_final, y_true, W, m, regularization_lambda, activation_final
     -------
     J : cost reflecting the prediction error
     """
-    s=0
+    s = 0
     for i in W.keys():
-       s += np.sum(W[i]**2) 
+        s += np.sum(W[i] ** 2)
     r = 0.5 * regularization_lambda * s / m
-    
-    small = 0.0000000001 #avoid log zero
-    
+
+    small = 0.0000000001  # avoid log zero
+
     if activation_final is None:
-        J = 0.5* np.sum((A_final - y_true)**2)/m + r
+        J = 0.5 * np.sum((A_final - y_true) ** 2) / m + r
     else:
         J = -np.sum(np.multiply(y_true, np.log(A_final + small))) / m + r
 
@@ -327,7 +336,6 @@ def cost_function(A_final, y_true, W, m, regularization_lambda, activation_final
 
 def mask(shape, dropout):
     pass
-
 
 
 #%% class NN
@@ -427,7 +435,7 @@ class NN:
         self.J = []
         self.m = np.shape(X_train)[0]  # get no of samples
         self.m_mini = self.batch_size  # Alex to work on mini batch or other optimizers
-        self.history={}
+        self.history = {}
         # initialize weight and bias
         np.random.seed(self.seed)
         for l in range(1, self.layer + 1):
@@ -455,19 +463,23 @@ class NN:
                     self.W,
                     self.m,
                     self.regularization_lambda,
-                    self.activation[self.layer]
+                    self.activation[self.layer],
                 )
             )
 
             # backpropagation
 
             ##### Alex note: need to check why we do below line of code   #HS: skip now
-            #self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
+            # self.dA[self.layer] = -np.divide(self.y_train, self.A[self.layer])
             for l in reversed(range(1, self.layer + 1)):
                 if l == self.layer:
-                    self.dZ[l] = dZ_final_layer(self.y_train, self.A[self.layer], self.activation[self.layer])
+                    self.dZ[l] = dZ_final_layer(
+                        self.y_train, self.A[self.layer], self.activation[self.layer]
+                    )
                 else:
-                    self.dZ[l] = backprop_activate(self.dA[l], self.Z[l], self.activation[l], self.A[l])
+                    self.dZ[l] = backprop_activate(
+                        self.dA[l], self.Z[l], self.activation[l], self.A[l]
+                    )
                 self.dA[l - 1], self.dW[l], self.db[l] = backprop_linear(
                     self.dZ[l],
                     self.W[l],
@@ -480,8 +492,8 @@ class NN:
                 )
             if history:
                 self.history[e] = {}
-                self.history[e]['dW'] = self.dW
-                self.history[e]['W']=self.W
+                self.history[e]["dW"] = self.dW
+                self.history[e]["W"] = self.W
             if visible:
                 print("epoch {}. Cost is {}".format(e, self.J[e]))
                 # for i in range(1, self.layer + 1):
@@ -489,8 +501,7 @@ class NN:
                 #     print(
                 #         "derivative of weight matrix {} is:\n{}".format(i, self.dW[i])
                 #     )
- 
-    
+
     #%% predict
     def predict(self, X_enquiry):
         """
@@ -510,9 +521,9 @@ class NN:
         for l in range(1, self.layer + 1):
             self.Z[l] = forward_linear(self.W[l], self.A[l - 1], self.b[l])
             self.A[l] = forward_activate(self.Z[l], self.activation[l])
-        
+
         a = np.transpose(self.A[self.layer])  # transpose predicted probability
-        
+
         if self.activation[self.layer] is None:
             y_predict = a
         else:
@@ -526,12 +537,16 @@ class NN:
         residual = y_predict - y_test
         metrics = {}
         if self.activation[self.layer] is None:
-            metrics['R2'] = 1 - (np.sum(residual**2)/len(residual))/np.var(y_test)
-        else: 
-            if self.activation[self.layer] =='softmax':  #assume classes are exclusive, either softmax or sigmoid for final layer activation
+            metrics["R2"] = 1 - (np.sum(residual ** 2) / len(residual)) / np.var(y_test)
+        else:
+            if (
+                self.activation[self.layer] == "softmax"
+            ):  # assume classes are exclusive, either softmax or sigmoid for final layer activation
                 adjust = 0.5
             else:
                 adjust = 1
-            metrics['accuracy'] = 1 - adjust * np.sum(np.absolute(residual))/np.shape(residual)[0]
+            metrics["accuracy"] = (
+                1 - adjust * np.sum(np.absolute(residual)) / np.shape(residual)[0]
+            )
         print(metrics)
         return metrics
