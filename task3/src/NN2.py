@@ -28,8 +28,6 @@ class NN:
         self.nodes = [None]  # List of node sizes. First entry will hold number
         # of features when fit called
         self.rng = np.random.default_rng(random_seed)
-        self.L = []  # empty list to store loss function output for epochs
-        self.Lreg = []  # empty list to store loss function with regularization term
 
         # create empty dictionary for W, b, Z, A
         self.W = {}  # weight of nodes
@@ -136,10 +134,22 @@ class NN:
                 print("bias shape: {}".format(self.b[i].shape))
                 print("activation function is {}".format(self.activations[i]))
 
-    def fit(self, epochs=10, verbose=True):
+    def fit(
+        self, epochs=10, min_epochs=5, patience=1, stopping_metric="valid", verbose=True
+    ):
         self.epochs = epochs
+        self.min_epochs = min_epochs
+        self.L = []  # empty list to store loss function output for within epoch
+        self.Lreg = (
+            []
+        )  # empty list to store loss function with regularization term within epoch
+        # create an empty array to store losses. Each row will hold losses for one
+        # epoch. Initialise "empty" array of appropriate size and append rows each epoch
+        self.L_ar = np.array([]).reshape(0, self.num_batches)
+        self.Lreg_ar = np.array([]).reshape(0, self.num_batches)
+        # create empty array for keeping track of validation loss after each epoch
+        self.L_valid = np.array([]).reshape(0, 1)
         # set self.y for softmax activation function to take as input
-        ##### this needs to be adjusted if doing minibatch
         self.y = self.y_train
         for e in range(epochs):
             # shuffle the data to ensure different minibatches are returned
@@ -177,6 +187,20 @@ class NN:
                 # update weights and biases
                 self.update_params()
 
+            # append losses to Loss array. Array has one row per epoch, and row
+            # contains losses for all minibatches
+            self.L_ar = np.concatenate((self.L_ar, np.array(self.L).reshape(1, -1)))
+            self.Lreg_ar = np.concatenate(
+                (self.Lreg_ar, np.array(self.Lreg).reshape(1, -1))
+            )
+            self.L = []
+            self.Lreg = []
+
+            # update validation loss for epoch
+            A, _ = self.fwd_pass(self.X_test, train=False)
+            L, _ = self.xe_loss(X=A[self.layers], y=self.y_test, m=self.y_test.shape[0])
+            self.L_valid = np.concatenate((self.L_valid, np.array(L).reshape(1, 1)))
+
             # print training information
             train_pred = self.predict(self.X_train)
             train_accuracy = self.accuracy(train_pred, self.y_train)
@@ -186,11 +210,18 @@ class NN:
                 test_accuracy = self.accuracy(test_pred, self.y_test)
 
             if verbose:
+                avg_loss = self.L_ar[-1, :].mean()
                 print(
-                    "epoch {} loss: {:.3f}; train accy: {:.3f}; test accy: {:.3f}".format(
-                        e, self.L[-1], train_accuracy, test_accuracy
+                    "epoch {} average loss: {:.3f}; train accy: {:.3f}; test accy: {:.3f}; test loss: {:.3f}".format(
+                        e, avg_loss, train_accuracy, test_accuracy, self.L_valid[e, 0]
                     )
                 )
+
+            if self.stop(
+                e, self.L_ar, self.min_epochs, patience, metric=stopping_metric
+            ):
+                print("average loss improvement is small: early stop")
+                break
 
     def fwd_pass(self, X, train=True):
         """
@@ -400,5 +431,52 @@ class NN:
         """Returns dA_l/dZ_l"""
         return self.dZ[l] @ self.W[l].T
 
-    def plot_error(self):
-        plt.plot(self.L)
+    def stop(self, epoch, L_ar, n=5, patience=1, metric="valid"):
+        """
+        Decide whether to stop. Will stop if at least n epochs have been run
+
+        epoch : int
+            the number epoch we have just finished (0-indexed)
+        L_ar : np.array
+            the self.L_ar array: array of losses for each minibatch and epoch
+        n : int
+            minimum number of epochs to run for
+        patience : int
+            number of epochs to wait before seeing an improvement
+        metric: str
+            whether to stop based on test or train loss
+        """
+        n = max(n, 1 + patience)
+        if epoch >= (n - 1):
+            if metric == "train":
+                loss = self.L_ar
+            elif metric == "valid":
+                loss = self.L_valid
+
+            if loss[epoch].mean() > loss[epoch - patience].mean() * 0.975:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def plot_error(self, miss_first=0):
+        """
+        Generate plot of errors.
+
+        miss_first : int, optional
+            The number of minibatches (or epochs if batch size = sample size)
+            to avoid in the chart. Sometimes the first few runs produce large
+            errors and we would rather not plot them. The default is 0.
+        """
+        # matplotlib gives warning when setting axis formatting. Repress this warning.
+        import warnings
+
+        warnings.filterwarnings("ignore")
+
+        ax = plt.axes()
+        ax.plot(self.L_ar.flatten()[miss_first:], "b.", alpha=0.1)
+        ax.grid()
+        ax.set_xticklabels(ax.get_xticks(), rotation=45)
+        ax.xaxis.set_major_locator(plt.MultipleLocator(self.num_batches))
+        ax.xaxis.set_major_formatter("epoch {pos}")
