@@ -189,6 +189,32 @@ class NN:
     def fit(
         self, epochs=10, min_epochs=5, patience=1, stopping_metric="valid", verbose=True
     ):
+        """
+        Fit the model.
+
+        Parameters
+        ----------
+        epochs : int, optional
+            Max number of epochs to run. If early stopping criteria is used
+            method may not reach max epochs. The default is 10.
+        min_epochs : integer, optional
+            Minimum number of epochs to run. Will not stop early before this.
+            The default is 5.
+        patience : integer, optional
+            Number of epochs to wait before seeing an improvement. Early sopping
+            will compare loss at current epoch with loss at patience epochs before.
+            The default is 1.
+        stopping_metric : string, either "valid" or "train", optional
+            whether to use training or test loss as stopping criteria.
+            The default is "valid".
+        verbose : boolean, optional
+            If True then print out metrics for each epoch. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         self.epochs = epochs
         self.min_epochs = min_epochs
         self.L = []  # empty list to store loss function output for within epoch
