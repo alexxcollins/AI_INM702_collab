@@ -169,7 +169,7 @@ class NN:
                 print("activation function is {}".format(self.activations[i]))
 
     def fit(
-        self, epochs=10, min_epochs=5, patience=1, stopping_metric="valid", verbose=True
+        self, epochs=10, min_epochs=5, patience=1, stopping_metric="valid", improve_threshold=0.025, verbose=True
     ):
         """
         Fit the model.
@@ -291,7 +291,7 @@ class NN:
 
             # early stopping test
             if self.stop(
-                e, self.L_ar, self.min_epochs, patience, metric=stopping_metric
+                e, self.L_ar, self.min_epochs, patience, metric=stopping_metric, improve_threshold=improve_threshold
             ):
                 print("average loss improvement is small: early stop")
                 break
@@ -553,7 +553,7 @@ class NN:
         """Returns dA_l/dZ_l"""
         return self.dZ[l] @ self.W[l].T
 
-    def stop(self, epoch, L_ar, n=5, patience=1, metric="valid"):
+    def stop(self, epoch, L_ar, n=5, patience=1, metric="valid", improve_threshold=0.025):
         """
         Decide whether to stop. Will stop if at least n epochs have been run
         epoch : int
@@ -574,7 +574,7 @@ class NN:
             elif metric == "valid":
                 loss = self.L_valid
 
-            if loss[epoch].mean() > loss[epoch - patience].mean() * 0.975:
+            if loss[epoch].mean() > loss[epoch - patience].mean() * (1-improve_threshold):
                 return True
             else:
                 return False
