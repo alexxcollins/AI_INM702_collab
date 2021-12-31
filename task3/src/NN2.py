@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Dec 20 11:40:43 2021
-
 @author: alexxcollins
-
 I can't work out what's going wrong with our NN.py. This is an attempt to
 create a really simple NN from scratch to see if it's working
 """
@@ -20,49 +18,40 @@ class NN:
         regularization is None or string. Currenlty "L1" and "L2" allowed
         reg_alpha is float in (0,1)
         random_seed sets random seed for object methods.
-
         Example of setting up a neural network:
-
         To run a neural net first intialise
                model = NN(learning_rate=0.2, random_seed=42)
-
         Then add layers to the model. For categorisatoin, last layer will need
         nodes = number of classes, and activation=NN.softmax.
         See .add() method for more details.
                model.add(nodes = 512, activation=NN.ReLu)
                model.add(nodes = 10, activation=NN.softmax)
-
         Then initialise the model with training and optional test data:
                model.model(X_train, y_train, X_test, y_test, minibatch_size=32)
         If verbose=True (the default value) then .model() will print a summary
         of the model with output for each layer of nodes, size of weights and
         biases parameters etc.
-
             number of samples = 60000
             training data has 784 features
             learning rate = 0.25
             regularization is None with parameter None
             minibatch size is 32
-
             hidden layer 0:
             nodes in previous layer: 784
             nodes in this layer: 1024
             weight shape: (784, 1024)
             bias shape: (1, 1024)
             activation function is <function NN.ReLu at 0x12ff843a0>
-
             hidden layer 1:
             nodes in previous layer: 1024
             nodes in this layer: 10
             weight shape: (1024, 10)
             bias shape: (1, 10)
             activation function is <function NN.softmax at 0x12ff844c0>
-
         Then fit the model. Set the maximum number of epochs, stopping criteria
         and whether you want verbose output or not.
               model.fit(epochs=15, min_epochs=2, patience=2,
                         stopping_metric="valid", verbose=True)
-
         To plot history of loss per minibatch, run model.plot_error()
         """
         self.lr = learning_rate
@@ -89,21 +78,17 @@ class NN:
     def add(self, nodes, activation):
         """
         Add dense layer with specified number of nodes.
-
         If adding the final layer, need to use activation = NN.softmax and
         nodes equal to number of classes to classify.
-
         Parameters
         ----------
         nodes : integer
             Number of nodes
-        activation: function
+        activation: function, user options - NN.ReLu, NN.sigmoid, NN.softmax
             default value is self.ReLu
-
         Returns
         -------
         None. Updates NN attributes
-
         """
         self.layers += 1
         self.nodes.append(nodes)
@@ -123,7 +108,6 @@ class NN:
         After the neural net has been initialised and layers added, model()
         initialises the model parameters, sets meta data for training and
         optionally prints out model architecture.
-
         Parameters
         ----------
         X_train : np array, shape (number samples, number features)
@@ -144,11 +128,9 @@ class NN:
             for Sigmoid.
         verbose : Bool, optional
             If True then prints out model arhitecture. The default is True.
-
         Returns
         -------
         None. Prints out model architecture if verbose=True
-
         """
         self.X_train = X_train
         self.y_train = y_train
@@ -191,7 +173,6 @@ class NN:
     ):
         """
         Fit the model.
-
         Parameters
         ----------
         epochs : int, optional
@@ -209,11 +190,9 @@ class NN:
             The default is "valid".
         verbose : boolean, optional
             If True then print out metrics for each epoch. The default is True.
-
         Returns
         -------
         None.
-
         """
         self.epochs = epochs
         self.min_epochs = min_epochs
@@ -323,7 +302,6 @@ class NN:
         or if running on test data it just returns the final Z and A layers.
         For final layers, A is an array of size (batch samples, numnber of
         classes) with probabilities summing to 1 across eac row.
-
         Parameters
         ----------
         X : np array of shape (batch samples, number of features)
@@ -332,7 +310,6 @@ class NN:
             Function runds differently depending on whether it is called in
             training or testing. If training, then all Z and A matirces in
             network are updated. The default is True.
-
         Returns
         -------
         If train is False:
@@ -370,7 +347,6 @@ class NN:
     def accuracy(self, y_pred, y_true, one_hot=True):
         """
         Calculate accuracy metric. [num correct predictions] / [sample size]
-
         Parameters
         ----------
         y_pred : array. Size (number of samples, 1) or
@@ -383,11 +359,9 @@ class NN:
         one_hot : Boolean optional
             if y_pred and y_true are one-hot encoded then this should be set
             to True; otherwise False. The default is True.
-
         Returns
         -------
         float - [num correct predictions] / [sample size]
-
         """
         if one_hot:
             y_true = np.argmax(y_true, axis=1)
@@ -401,18 +375,14 @@ class NN:
         first hidden layer.
         We want to ensure that at each stage, the array X@W + b is shape
         (no of samples, no of nodes)
-
         Very naive setting of weight magnitudes to start with.
-
         Parameters
         ----------
         scale : string. Either 'He' or 'Xavier'. He is better for ReLu and
                 'Xavier' for Sigmoid.
-
         Returns
         -------
         Weight and bias matrices
-
         """
         for i in range(self.layers):
             if scale == "Xavier":  # Xavier initialization used for Sigmoid?
@@ -427,12 +397,10 @@ class NN:
         """
         Update parameters after gradients have been calculted in back propogation
         stage.
-
         Returns
         -------
         None. Updates attributes containing weights. Uses gradients calculated
         by back propogation.
-
         """
         # for NN work with n layers, there are n weights indexed from 0 to n-1
         for i in range(self.layers):
@@ -448,7 +416,6 @@ class NN:
         """
         Relu activation
         Returns either forward pass value or gradient
-
         Parameters
         ----------
         X : numpy array of shape (no of samples in batch, nodes in current layer)
@@ -459,11 +426,9 @@ class NN:
         gradient : Boolean
             Set to True if want deritive returned, False if want forward pass
             value returned
-
         Returns
         -------
         Transformed array, A, of same shape as X
-
         """
         if gradient:
             return np.where(X > 0, 1, 0)
@@ -474,7 +439,6 @@ class NN:
         """
         Sigmoid activation
         Returns either forward pass value or gradient
-
         Parameters
         ----------
         X : numpy array of shape (no of samples in batch, nodes in current layer)
@@ -485,21 +449,20 @@ class NN:
         gradient : Boolean
             Set to True if want deritive returned, False if want forward pass
             value returned
-
         Returns
         -------
         Transformed array, A, of same shape as X
-
         """
         if gradient:
-            return 1 / (1 + np.exp(-X))
-        else:
             return X * (1 - X)
+        else:
+            return 1 / (1 + np.exp(-X))
+            
+        
 
     def softmax(self, X, y=None, gradient=False):
         """
         softmax activation
-
         Parameters
         ----------
         X : numpy array of shape (no of samples in batch, nodes in current layer)
@@ -508,11 +471,9 @@ class NN:
             Set to True if want deritive returned, False if want forward pass
             value returned. The derivative in this case is the derivative of
             the softmax and cross-entropy loss chained together.
-
         Returns
         -------
         Transformed array, A, of same shape as X
-
         """
         if gradient:
             return X - y
@@ -524,18 +485,15 @@ class NN:
     def xe_loss(self, X, y, m):
         """
         Calculate cross entropy loss.
-
         Parameters
         ----------
         X : array, features
         y : array, one-hot encoded labels
         m : int
             batch size
-
         If L1 or L2 regularization is used, we return two values: it is helpful
         to keep track of loss without regularization to compare betweed models
         with different regularization or different parameters.
-
         Returns
         -------
         tuple. (xe-loss without regularization loss, xe-loss with regularization loss)
@@ -564,7 +522,6 @@ class NN:
         """
         This returns dZ/dA in the general case, but for the final layer returns
         dL/dA where L is the loss function
-
         l is an integer representing layer
         y is one-hot encoded numpy array of size (number of samples, number of categories)
         """
@@ -599,7 +556,6 @@ class NN:
     def stop(self, epoch, L_ar, n=5, patience=1, metric="valid"):
         """
         Decide whether to stop. Will stop if at least n epochs have been run
-
         epoch : int
             the number epoch we have just finished (0-indexed)
         L_ar : np.array
@@ -628,7 +584,6 @@ class NN:
     def plot_error(self, miss_first=0):
         """
         Generate plot of errors.
-
         miss_first : int, optional
             The number of minibatches (or epochs if batch size = sample size)
             to avoid in the chart. Sometimes the first few runs produce large
@@ -645,3 +600,4 @@ class NN:
         ax.set_xticklabels(ax.get_xticks(), rotation=45)
         ax.xaxis.set_major_locator(plt.MultipleLocator(self.num_batches))
         ax.xaxis.set_major_formatter("epoch {pos}")
+
