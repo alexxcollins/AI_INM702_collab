@@ -14,6 +14,7 @@ different types of colinearity to investigate:
 from regression import GenerateData
 import numpy as np
 from scipy.stats import norm
+from sklearn.linear_model import LinearRegression
 
 
 class ColinearX(GenerateData):
@@ -157,6 +158,49 @@ class ColinearX(GenerateData):
         # create the new X_i
         self.beta = np.concatenate([self.beta, np.array(y_beta).reshape(1, 1)])
 
-    def variance_inflation_factor():
+    def variance_inflation_factor(self, X):
         """Calculate variance inflation factors for X."""
-        pass
+
+        # create attibute to hold inflation factors
+        self.var_inf_factor = np.zeros(shape=X.shape[1])
+        X = self._normalise(X)
+        # loop over rows of X
+        for i in range(X.shape[1]):
+            Xi = X[:, i]
+            x_rest = np.delete(X, i, axis=1)
+            reg = LinearRegression()
+            reg = reg.fit(x_rest, Xi)
+            score = reg.score(x_rest, Xi)
+            self.var_inf_factor[i] = 1 / (1 - score)
+
+        return self.var_inf_factor
+
+    def convert_feature_to_residuals(self, X, i):
+        """Convert a feature from original values to the residuals of linear
+        regression of the other features.
+
+        X: array of features of the model
+        i: 0-indexed feature to convert to residuals.
+        """
+
+        # select the feature to change
+        Xi = X[:, i]
+        x_rest = np.delete(X, i, axis=1)
+
+        reg = LinearRegression()
+        reg = reg.fit(x_rest, Xi)
+        Xi_pred = reg.predict(x_rest)
+        residuals = Xi - Xi_pred
+        self.X[:, i] = residuals
+        self.X1[:, i + 1] = residuals
+
+    def _normalise(self, X):
+        """normalises vector array X so that all features (columns) have
+        unit length and zero mean.
+        """
+        X = X - X.mean(axis=0)
+        norm = np.linalg.norm(X, axis=0)
+        eps = 0.0001
+        # if norm < eps:
+        #     return X / eps
+        return X / norm
