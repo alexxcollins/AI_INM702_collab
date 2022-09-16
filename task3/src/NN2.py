@@ -5,6 +5,8 @@ Created on Mon Dec 20 11:40:43 2021
 @author: alexxcollins
 I can't work out what's going wrong with our NN.py. This is an attempt to
 create a really simple NN from scratch to see if it's working
+
+- Edit: this has become the main code.
 """
 import numpy as np
 import matplotlib.pyplot as plt
